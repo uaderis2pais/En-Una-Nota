@@ -1,13 +1,13 @@
 import { pool } from '../config/db.js';
 
 /**
- * GET /api/cancion-hoy
- * Obtiene la canción asignada para la fecha actual (o la especificada por query ?fecha=YYYY-MM-DD)
+ * GET /api/cancion-hoy?categoria=rock&fecha=YYYY-MM-DD
+ * Obtiene la canción asignada a la fecha y categoría especificada
  */
 export const getCancionHoy = async (req, res) => {
   try {
-    // Fecha en formato YYYY-MM-DD (recibida o fecha actual en UTC/local)
     const fecha = req.query.fecha || new Date().toISOString().split('T')[0];
+    const categoria = (req.query.categoria || 'general').toLowerCase();
 
     const query = `
       SELECT 
@@ -18,16 +18,17 @@ export const getCancionHoy = async (req, res) => {
         c.anio AS "year",
         c.portada_url AS "coverUrl", 
         c.audio_url AS "audioUrl", 
+        c.genero AS "genre",
         c.start_time::float AS "startTime",
-        cd.fecha AS "date"
+        cd.fecha AS "date",
+        cd.categoria AS "category"
       FROM cancion_diaria cd
       JOIN canciones c ON cd.cancion_id = c.id
-      WHERE cd.fecha = $1;
+      WHERE cd.fecha = $1 AND LOWER(cd.categoria) = $2;
     `;
 
-    const result = await pool.query(query, [fecha]);
+    const result = await pool.query(query, [fecha, categoria]);
 
-    // Si existe una canción asignada para hoy
     if (result.rows.length > 0) {
       return res.json({
         success: true,
@@ -36,9 +37,14 @@ export const getCancionHoy = async (req, res) => {
       });
     }
 
-    // Fallback inteligente: si no hay canción asignada para la fecha exacta, tomar una canción rotativa del catálogo
-    const fallbackQuery = `SELECT id, titulo AS "title", artista AS "artist", album, anio AS "year", portada_url AS "coverUrl", audio_url AS "audioUrl", start_time::float AS "startTime" FROM canciones ORDER BY id LIMIT 1;`;
-    const fallbackResult = await pool.query(fallbackQuery);
+    // Fallback: si no hay canción diaria para hoy en esta categoría, traer una canción de ese género
+    const fallbackQuery = `
+      SELECT id, titulo AS "title", artista AS "artist", album, anio AS "year", portada_url AS "coverUrl", audio_url AS "audioUrl", genero AS "genre", start_time::float AS "startTime"
+      FROM canciones
+      WHERE LOWER(genero) = $1 OR $1 = 'general'
+      ORDER BY id LIMIT 1;
+    `;
+    const fallbackResult = await pool.query(fallbackQuery, [categoria]);
 
     if (fallbackResult.rows.length > 0) {
       return res.json({
@@ -46,32 +52,35 @@ export const getCancionHoy = async (req, res) => {
         source: 'fallback',
         data: {
           ...fallbackResult.rows[0],
-          date: fecha
+          date: fecha,
+          category: categoria
         }
       });
     }
 
     return res.status(404).json({
       success: false,
-      message: 'No se encontraron canciones en el catálogo. Ejecuta el script de seed.'
+      message: `No hay canciones disponibles para la categoría '${categoria}'.`
     });
 
   } catch (error) {
     console.error('Error en getCancionHoy:', error);
     return res.status(500).json({
       success: false,
-      message: 'Error interno del servidor al consultar la canción del día.'
+      message: 'Error interno del servidor.'
     });
   }
 };
 
 /**
- * GET /api/canciones
- * Obtiene la lista completa de canciones del catálogo (útil para el autocompletado del buscador)
+ * GET /api/canciones?genero=rock
+ * Obtiene el catálogo de canciones (opcionalmente filtrado por género)
  */
 export const getCancionesCatalog = async (req, res) => {
   try {
-    const query = `
+    const genero = req.query.genero ? req.query.genero.toLowerCase() : null;
+
+    let query = `
       SELECT 
         id, 
         titulo AS "title", 
@@ -80,11 +89,20 @@ export const getCancionesCatalog = async (req, res) => {
         anio AS "year",
         portada_url AS "coverUrl", 
         audio_url AS "audioUrl", 
+        genero AS "genre",
         start_time::float AS "startTime"
-      FROM canciones 
-      ORDER BY titulo ASC;
+      FROM canciones
     `;
-    const { rows } = await pool.query(query);
+
+    const params = [];
+    if (genero) {
+      query += ` WHERE LOWER(genero) = $1`;
+      params.push(genero);
+    }
+
+    query += ` ORDER BY titulo ASC;`;
+
+    const { rows } = await pool.query(query, params);
 
     return res.json({
       success: true,
@@ -95,17 +113,17 @@ export const getCancionesCatalog = async (req, res) => {
     console.error('Error en getCancionesCatalog:', error);
     return res.status(500).json({
       success: false,
-      message: 'Error interno al consultar el catálogo de canciones.'
+      message: 'Error al consultar catálogo.'
     });
   }
 };
 
 /**
  * POST /api/canciones
- * Agrega una nueva canción al catálogo
+ * Agrega una canción al catálogo con género
  */
 export const createCancion = async (req, res) => {
-  const { title, artist, album, year, coverUrl, audioUrl, startTime = 0.0 } = req.body;
+  const { title, artist, album, year, coverUrl, audioUrl, genre = 'general', startTime = 0.0 } = req.body;
 
   if (!title || !artist || !coverUrl || !audioUrl) {
     return res.status(400).json({
@@ -116,33 +134,33 @@ export const createCancion = async (req, res) => {
 
   try {
     const query = `
-      INSERT INTO canciones (titulo, artista, album, anio, portada_url, audio_url, start_time)
-      VALUES ($1, $2, $3, $4, $5, $6, $7)
-      RETURNING id, titulo AS "title", artista AS "artist", album, anio AS "year", portada_url AS "coverUrl", audio_url AS "audioUrl", start_time::float AS "startTime";
+      INSERT INTO canciones (titulo, artista, album, anio, portada_url, audio_url, genero, start_time)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      RETURNING id, titulo AS "title", artista AS "artist", album, anio AS "year", portada_url AS "coverUrl", audio_url AS "audioUrl", genero AS "genre", start_time::float AS "startTime";
     `;
 
-    const { rows } = await pool.query(query, [title, artist, album, year, coverUrl, audioUrl, startTime]);
+    const { rows } = await pool.query(query, [title, artist, album, year, coverUrl, audioUrl, genre, startTime]);
 
     return res.status(201).json({
       success: true,
-      message: 'Canción agregada exitosamente.',
+      message: 'Canción creada exitosamente.',
       data: rows[0]
     });
   } catch (error) {
     console.error('Error en createCancion:', error);
     return res.status(500).json({
       success: false,
-      message: 'Error interno al crear la canción.'
+      message: 'Error interno al crear canción.'
     });
   }
 };
 
 /**
  * POST /api/cancion-diaria
- * Asigna una canción a una fecha específica
+ * Asigna una canción a una fecha y categoría
  */
 export const setCancionDiaria = async (req, res) => {
-  const { fecha, cancionId } = req.body;
+  const { fecha, cancionId, categoria = 'general' } = req.body;
 
   if (!fecha || !cancionId) {
     return res.status(400).json({
@@ -153,14 +171,14 @@ export const setCancionDiaria = async (req, res) => {
 
   try {
     const query = `
-      INSERT INTO cancion_diaria (fecha, cancion_id)
-      VALUES ($1, $2)
-      ON CONFLICT (fecha) 
+      INSERT INTO cancion_diaria (fecha, categoria, cancion_id)
+      VALUES ($1, $2, $3)
+      ON CONFLICT (fecha, categoria) 
       DO UPDATE SET cancion_id = EXCLUDED.cancion_id
-      RETURNING id, fecha, cancion_id AS "cancionId";
+      RETURNING id, fecha, categoria, cancion_id AS "cancionId";
     `;
 
-    const { rows } = await pool.query(query, [fecha, cancionId]);
+    const { rows } = await pool.query(query, [fecha, categoria, cancionId]);
 
     return res.json({
       success: true,
@@ -171,7 +189,7 @@ export const setCancionDiaria = async (req, res) => {
     console.error('Error en setCancionDiaria:', error);
     return res.status(500).json({
       success: false,
-      message: 'Error interno al asignar la canción diaria.'
+      message: 'Error interno al asignar canción diaria.'
     });
   }
 };

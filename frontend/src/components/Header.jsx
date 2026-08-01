@@ -1,13 +1,24 @@
 import React, { useState } from 'react';
-import { Music2, HelpCircle, RefreshCw, Volume2 } from 'lucide-react';
+import { Music2, HelpCircle, RefreshCw, Volume2, Home } from 'lucide-react';
 
-export const Header = ({ onResetGame, currentSongIndex, totalSongs }) => {
+export const Header = ({ onResetGame, onGoHome, categoryName, currentSongIndex, totalSongs }) => {
   const [showHelp, setShowHelp] = useState(false);
 
   return (
     <header className="w-full max-w-xl mx-auto pt-6 pb-4 px-4 flex flex-col items-center border-b border-slate-800/80">
       <div className="w-full flex items-center justify-between">
-        <div className="flex items-center gap-2">
+        {/* Navigation Home & Help */}
+        <div className="flex items-center gap-1">
+          {onGoHome && (
+            <button
+              onClick={onGoHome}
+              className="p-2 text-slate-400 hover:text-emerald-400 hover:bg-slate-800/60 rounded-full transition-all flex items-center gap-1.5"
+              title="Volver a Inicio"
+            >
+              <Home className="w-5 h-5" />
+            </button>
+          )}
+
           <button 
             onClick={() => setShowHelp(!showHelp)}
             className="p-2 text-slate-400 hover:text-emerald-400 hover:bg-slate-800/60 rounded-full transition-all"
@@ -18,7 +29,7 @@ export const Header = ({ onResetGame, currentSongIndex, totalSongs }) => {
         </div>
 
         {/* Logo / Title */}
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2.5 cursor-pointer" onClick={onGoHome}>
           <div className="p-2 bg-gradient-to-tr from-emerald-500 to-cyan-500 rounded-xl shadow-lg shadow-emerald-500/20 text-slate-950 font-bold">
             <Music2 className="w-6 h-6 stroke-[2.5]" />
           </div>
@@ -26,21 +37,26 @@ export const Header = ({ onResetGame, currentSongIndex, totalSongs }) => {
             <h1 className="text-2xl font-extrabold tracking-tight bg-gradient-to-r from-white via-slate-200 to-emerald-400 bg-clip-text text-transparent">
               EN UNA NOTA
             </h1>
-            <p className="text-[10px] uppercase font-bold tracking-widest text-emerald-400/90">
-              Adivina la Canción en Español
-            </p>
+            {categoryName ? (
+              <p className="text-[10px] uppercase font-bold tracking-widest text-emerald-400/90">
+                Categoría: <span className="text-white">{categoryName}</span>
+              </p>
+            ) : (
+              <p className="text-[10px] uppercase font-bold tracking-widest text-emerald-400/90">
+                Adivina la Canción en Español
+              </p>
+            )}
           </div>
         </div>
 
-        {/* Reset / Change Song for testing */}
+        {/* Reset / Refresh */}
         <div className="flex items-center gap-2">
           <button
             onClick={onResetGame}
             className="p-2 text-slate-400 hover:text-emerald-400 hover:bg-slate-800/60 rounded-full transition-all flex items-center gap-1 text-xs font-medium"
-            title="Siguiente canción de prueba"
+            title="Reiniciar o probar otra canción"
           >
             <RefreshCw className="w-4 h-4" />
-            <span className="hidden sm:inline text-[11px] text-slate-400">#{currentSongIndex + 1}/{totalSongs}</span>
           </button>
         </div>
       </div>
