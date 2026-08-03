@@ -21,7 +21,7 @@ import {
   Volume2
 } from 'lucide-react';
 
-const API_BASE_URL = 'http://localhost:4000/api/admin';
+const API_BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:4000/api') + '/admin';
 
 export function AdminView() {
   const [token, setToken] = useState(localStorage.getItem('adminToken') || '');

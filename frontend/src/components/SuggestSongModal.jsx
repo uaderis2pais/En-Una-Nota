@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { X, Sparkles, Music, CheckCircle2, AlertCircle, Send } from 'lucide-react';
 
-const API_BASE_URL = 'http://localhost:4000/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
 
 // Categorías Específicas Permitidas para Sugerencias (EXCLUIDO Mix General)
 const SUGGESTION_CATEGORIES = [

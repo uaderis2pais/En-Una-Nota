@@ -10,7 +10,7 @@ import { SuggestSongModal } from './components/SuggestSongModal';
 import AdminView from './views/AdminView';
 import { AlertCircle, RefreshCw, Lightbulb } from 'lucide-react';
 
-const API_BASE_URL = 'http://localhost:4000/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
 
 // Helper local YYYY-MM-DD sin desfasaje UTC
 const getLocalDateString = () => {

@@ -1,13 +1,13 @@
 import React from 'react';
-import { 
-  Radio, 
-  Flame, 
-  Disc3, 
-  Music, 
-  Sparkles, 
-  Mic2, 
-  Guitar, 
-  Play, 
+import {
+  Radio,
+  Flame,
+  Disc3,
+  Music,
+  Sparkles,
+  Mic2,
+  Guitar,
+  Play,
   Trophy,
   Zap,
   Star,
@@ -161,7 +161,7 @@ export function HomeView({ onSelectCategory, onOpenSuggest, totalSongsCount }) {
           {totalSongsCount > 0 && (
             <>
               <span className="text-slate-600">•</span>
-              <span className="text-white font-black">{totalSongsCount} Canciones en Base de Datos</span>
+              <span className="text-white font-black">{totalSongsCount} Canciones Cargadas hasta el momento</span>
             </>
           )}
         </div>
@@ -174,18 +174,18 @@ export function HomeView({ onSelectCategory, onOpenSuggest, totalSongsCount }) {
       </div>
 
       {/* BANNER DESTACADO: MIX GENERAL (DESAFÍO PRINCIPAL - COMPACTO EN MOBILE) */}
-      <div 
+      <div
         onClick={() => onSelectCategory('general')}
         className="w-full glass-panel p-4 sm:p-8 rounded-2xl sm:rounded-3xl border-2 border-emerald-500/50 hover:border-emerald-400 transition-all duration-300 transform hover:-translate-y-1 hover:shadow-2xl shadow-emerald-500/10 cursor-pointer relative overflow-hidden group mb-6 sm:mb-12"
       >
         <div className="absolute -top-24 -right-24 w-72 h-72 rounded-full bg-gradient-to-br from-emerald-500 to-cyan-500 opacity-25 blur-3xl group-hover:opacity-45 transition-opacity" />
-        
+
         <div className="flex flex-col md:flex-row items-center justify-between gap-3 sm:gap-6 relative z-10">
           <div className="flex items-center gap-3 sm:gap-6 text-center sm:text-left">
             <div className="p-3 sm:p-5 rounded-2xl bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-600 text-slate-950 shadow-xl shadow-emerald-500/30 group-hover:scale-105 transition-transform duration-300 shrink-0">
               <Radio className="w-6 h-6 sm:w-10 sm:h-10 stroke-[2.5]" />
             </div>
-            
+
             <div>
               <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 mb-1">
                 <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-[9px] sm:text-xs font-black uppercase tracking-wider">
@@ -265,7 +265,7 @@ export function HomeView({ onSelectCategory, onOpenSuggest, totalSongsCount }) {
                     <div className={`p-2 sm:p-3 rounded-xl bg-gradient-to-br ${cat.color} text-white shadow-md group-hover:scale-110 transition-transform duration-300 shrink-0`}>
                       <IconComponent className="w-4 h-4 sm:w-6 sm:h-6" />
                     </div>
-                    
+
                     <span className="px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 text-[8px] sm:text-[10px] font-bold border border-slate-700 truncate max-w-[90px] sm:max-w-none">
                       {cat.badge}
                     </span>
@@ -327,7 +327,7 @@ export function HomeView({ onSelectCategory, onOpenSuggest, totalSongsCount }) {
           {totalSongsCount > 0 && (
             <p className="text-[11px] text-slate-400 font-semibold flex items-center gap-1.5">
               <Music className="w-3.5 h-3.5 text-emerald-400" />
-              <span>Base de datos activa: <strong className="text-emerald-400">{totalSongsCount} canciones</strong> verificadas</span>
+              <span>Actualmente: <strong className="text-emerald-400">{totalSongsCount} canciones</strong> verificadas</span>
             </p>
           )}
         </div>
