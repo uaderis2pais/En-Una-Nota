@@ -1,7 +1,7 @@
 {
   "name": "en-una-nota-backend",
   "version": "1.0.0",
-  "description": "API REST y Base de Datos PostgreSQL para En Una Nota (Juego diario de música en español)",
+  "description": "API REST y Base de Datos PostgreSQL para Me Suena a... (Juego diario de música en español)",
   "main": "src/server.js",
   "type": "module",
   "scripts": {
@@ -13,7 +13,9 @@
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
-    "pg": "^8.11.5"
+    "jsonwebtoken": "^9.0.3",
+    "pg": "^8.11.5",
+    "yt-search": "^2.13.1"
   },
   "devDependencies": {
     "nodemon": "^3.1.0"

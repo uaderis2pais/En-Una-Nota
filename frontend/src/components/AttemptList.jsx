@@ -4,7 +4,7 @@ import { XCircle, CheckCircle2, FastForward, Lock, PlayCircle } from 'lucide-rea
 export const AttemptList = ({ 
   attempts, 
   currentAttemptIndex, 
-  attemptTimes = [0.3, 0.8, 1.5, 2.5, 4, 5, 7],
+  attemptTimes = [0.5, 1, 2, 3, 5, 10, 15],
   isGameOver 
 }) => {
   return (
@@ -69,7 +69,6 @@ export const AttemptList = ({
             </div>
           );
         } else {
-          // Bloqueado / Futuro
           content = (
             <div className="flex items-center justify-between w-full opacity-50">
               <div className="flex items-center gap-2">

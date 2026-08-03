@@ -5,15 +5,17 @@ import {
   createCancion, 
   setCancionDiaria 
 } from '../controllers/songController.js';
+import { crearSugerenciaUsuario } from '../controllers/adminController.js';
 
 const router = Router();
 
-// Ruta principal para la canción diaria (consumida por el Frontend)
+// Rutas públicas del juego
 router.get('/cancion-hoy', getCancionHoy);
-
-// Rutas de catálogo y administración
 router.get('/canciones', getCancionesCatalog);
 router.post('/canciones', createCancion);
 router.post('/cancion-diaria', setCancionDiaria);
+
+// Ruta pública para sugerir canciones (Usuarios)
+router.post('/sugerencias', crearSugerenciaUsuario);
 
 export default router;

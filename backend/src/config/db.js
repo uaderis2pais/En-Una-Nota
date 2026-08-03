@@ -19,7 +19,7 @@ export const initDatabase = async () => {
   try {
     console.log('🔄 Migrando y verificando la base de datos en PostgreSQL...');
 
-    // 1. Tabla 'canciones' con columna 'genero'
+    // 1. Tabla 'canciones' con columnas 'genero', 'popularidad' y 'reproducciones'
     await client.query(`
       CREATE TABLE IF NOT EXISTS canciones (
         id SERIAL PRIMARY KEY,
@@ -30,14 +30,24 @@ export const initDatabase = async () => {
         portada_url TEXT NOT NULL,
         audio_url TEXT NOT NULL,
         genero VARCHAR(100) DEFAULT 'general',
+        popularidad INTEGER DEFAULT 0,
+        reproducciones BIGINT DEFAULT 0,
         start_time NUMERIC(5, 2) DEFAULT 0.0,
         created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
       );
     `);
 
-    // Migración: asegurar que exista la columna 'genero' en tablas existentes
+    // Migraciones: asegurar que existan las columnas 'genero', 'popularidad' y 'reproducciones'
     await client.query(`
       ALTER TABLE canciones ADD COLUMN IF NOT EXISTS genero VARCHAR(100) DEFAULT 'general';
+    `);
+
+    await client.query(`
+      ALTER TABLE canciones ADD COLUMN IF NOT EXISTS popularidad INTEGER DEFAULT 0;
+    `);
+
+    await client.query(`
+      ALTER TABLE canciones ADD COLUMN IF NOT EXISTS reproducciones BIGINT DEFAULT 0;
     `);
 
     // 2. Tabla 'cancion_diaria' con soporte para 'categoria' y restricción UNIQUE (fecha, categoria)
@@ -74,7 +84,30 @@ export const initDatabase = async () => {
       END $$;
     `);
 
-    console.log('✅ Tablas e índices actualizados correctamente (genero, cancion_diaria(fecha, categoria)).');
+    // 3. Tabla 'sugerencias' para canciones enviadas por los usuarios con reproducciones
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS sugerencias (
+        id SERIAL PRIMARY KEY,
+        spotify_url TEXT NOT NULL,
+        titulo VARCHAR(255) NOT NULL,
+        artista VARCHAR(255) NOT NULL,
+        album VARCHAR(255),
+        anio VARCHAR(10),
+        portada_url TEXT,
+        audio_url TEXT,
+        genero VARCHAR(100) NOT NULL,
+        reproducciones BIGINT DEFAULT 0,
+        estado VARCHAR(20) DEFAULT 'pendiente',
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    // Migración para añadir reproducciones a sugerencias si no existía
+    await client.query(`
+      ALTER TABLE sugerencias ADD COLUMN IF NOT EXISTS reproducciones BIGINT DEFAULT 0;
+    `);
+
+    console.log('✅ Tablas e índices actualizados correctamente (canciones, cancion_diaria, sugerencias).');
   } catch (error) {
     console.error('❌ Error al migrar la Base de Datos:', error.message);
   } finally {

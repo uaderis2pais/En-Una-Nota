@@ -1,29 +1,45 @@
 import React, { useState } from 'react';
-import { HelpCircle, ChevronDown, Music, Calendar, Zap, ShieldCheck } from 'lucide-react';
+import { HelpCircle, ChevronDown, Music, Calendar, Zap, ShieldCheck, Flame, Lightbulb, Youtube, Send } from 'lucide-react';
 
-export const FAQ = () => {
+export const FAQ = ({ onOpenSuggest }) => {
   const [openIndex, setOpenIndex] = useState(null);
 
   const faqs = [
     {
       icon: Music,
-      question: "¿Cómo se juega a En Una Nota?",
-      answer: "Elige tu categoría musical favorita. Cada día tendrás una canción secreta para adivinar escuchando fragmentos ultra cortos que van aumentando (0.3s, 0.8s, 1.5s, 2.5s, 4s, 5s y 7s). Tienes 7 intentos en total."
+      question: "¿Cómo se juega a Me Suena a...?",
+      answer: "Elige tu categoría preferida (Mix General, Rock Nacional, Cumbia, Reggaeton Old/New School, Pop Latino o Trap). Tienes 7 intentos para adivinar la canción del día escuchando fragmentos progresivos que van desde 0.5s, 1s, 2s, 3s, 5s, 10s hasta 15 segundos."
     },
     {
       icon: Calendar,
-      question: "¿Cuándo se renuevan las canciones?",
-      answer: "Las canciones del día se actualizan automáticamente todos los días a las 00:00 hs (hora local). Cada categoría (Rock, Cumbia, Reggaeton, etc.) tiene su propia canción del día independiente."
+      question: "¿Cuándo se renuevan las canciones diarias?",
+      answer: "Las canciones del día se actualizan automáticamente todos los días exactamente a las 00:00 hs (medianoche). Cada categoría tiene su propia canción del día y el Mix General ofrece una canción exclusiva que no se repite con ninguna otra categoría ese mismo día."
+    },
+    {
+      icon: Flame,
+      question: "¿Cómo funciona el Sistema de Rachas Doble?",
+      answer: "El juego registra dos rachas independientes por categoría: 🔥 Racha Diaria (Premia tu constancia sumando días consecutivos que entras a jugar, ganes o pierdas) y 🏆 Victorias (Premia tu precisión manteniendo el conteo de partidas ganadas consecutivas)."
+    },
+    {
+      icon: Lightbulb,
+      question: "¿Qué pistas tengo disponibles durante la partida?",
+      answer: "En la pantalla de juego verás una tarjeta de pistas con el Año oficial de lanzamiento de la canción y el número real y exacto de Visualizaciones acumuladas en YouTube."
+    },
+    {
+      icon: Youtube,
+      question: "¿Puedo escuchar la canción completa al terminar?",
+      answer: "¡Sí! Al adivinar la canción o agotar tus 7 intentos, se desbloqueará el reproductor completo de 30 segundos y tendrás un botón directo para ir a escuchar el tema oficial completo en YouTube."
     },
     {
       icon: ShieldCheck,
-      question: "¿De dónde provienen los audios y canciones?",
-      answer: "Utilizamos la API pública oficial de Apple Music / iTunes para obtener vistas previas de 30 segundos en alta calidad y carátulas oficiales en alta resolución."
+      question: "¿De dónde proviene la música y la información?",
+      answer: "Utilizamos un sistema híbrido que extrae la metadata exacta, carátulas HD y popularidad desde Spotify, reproducciones exactas de YouTube y streams de audio verificados en alta calidad."
     },
     {
-      icon: Zap,
-      question: "¿Cómo funciona el sistema de Rachas (Streaks)?",
-      answer: "Si adivinas la canción del día en una categoría, ganas 1 día de racha. Si juegas todos los días consecutivos en esa categoría, tu racha aumentará. Si dejas pasar un día sin adivinar, la racha se reiniciará a 1."
+      icon: Lightbulb,
+      question: "¿Cómo puedo sugerir una canción para el juego?",
+      answer: "¡Muy fácil! Si sentís que falta un temazo en el juego, podés enviarnos el enlace de Spotify de la canción que querés agregar. Nuestro equipo revisa todas las sugerencias y las más populares son agregadas al juego. Solo canciones individuales (no playlists).",
+      hasAction: true
     }
   ];
 
@@ -35,7 +51,7 @@ export const FAQ = () => {
     <section className="w-full max-w-4xl mx-auto my-12 px-4">
       <div className="flex items-center justify-center gap-2 mb-6">
         <HelpCircle className="w-6 h-6 text-emerald-400" />
-        <h2 className="text-2xl font-extrabold text-white text-center">Preguntas Frecuentes</h2>
+        <h2 className="text-2xl font-extrabold text-white text-center">Preguntas Frecuentes (FAQ)</h2>
       </div>
 
       <div className="space-y-3">
@@ -62,8 +78,17 @@ export const FAQ = () => {
               </button>
 
               {isOpen && (
-                <div className="px-5 pb-5 text-xs sm:text-sm text-slate-300 border-t border-slate-800/60 pt-3 animate-fadeIn">
-                  {faq.answer}
+                <div className="px-5 pb-5 text-xs sm:text-sm text-slate-300 border-t border-slate-800/60 pt-3 animate-fadeIn leading-relaxed space-y-3">
+                  <p>{faq.answer}</p>
+                  {faq.hasAction && onOpenSuggest && (
+                    <button
+                      onClick={onOpenSuggest}
+                      className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-400 text-slate-950 font-black text-xs shadow-lg shadow-amber-500/20 hover:brightness-110 transition-all active:scale-95"
+                    >
+                      <Send className="w-3.5 h-3.5" />
+                      <span>¡Sugerir una Canción Ahora!</span>
+                    </button>
+                  )}
                 </div>
               )}
             </div>

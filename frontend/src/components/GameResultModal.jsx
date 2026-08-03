@@ -1,23 +1,63 @@
-import React from 'react';
-import { Trophy, Frown, RefreshCw, Share2, Sparkles, Music } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Trophy, Frown, Sparkles, Music, LayoutGrid, Clock, Youtube } from 'lucide-react';
+
+/**
+ * Contador descendiente hasta medianoche (00:00:00)
+ */
+export const MidnightCountdown = () => {
+  const [timeLeft, setTimeLeft] = useState('');
+
+  useEffect(() => {
+    const updateCountdown = () => {
+      const now = new Date();
+      const midnight = new Date();
+      midnight.setHours(24, 0, 0, 0); // Próxima medianoche 00:00:00
+
+      const diffMs = midnight - now;
+      if (diffMs <= 0) {
+        setTimeLeft('00:00:00');
+        return;
+      }
+
+      const hours = Math.floor(diffMs / (1000 * 60 * 60));
+      const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((diffMs % (1000 * 60)) / 1000);
+
+      const pad = (n) => String(n).padStart(2, '0');
+      setTimeLeft(`${pad(hours)}h ${pad(minutes)}m ${pad(seconds)}s`);
+    };
+
+    updateCountdown();
+    const interval = setInterval(updateCountdown, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <div className="flex items-center justify-center gap-2 text-xs font-mono font-bold text-emerald-400 bg-emerald-950/40 py-2.5 px-4 rounded-xl border border-emerald-500/30 shadow-inner my-2">
+      <Clock className="w-4 h-4 text-emerald-400 animate-pulse shrink-0" />
+      <span>Próxima canción diaria en: <strong className="text-white font-extrabold">{timeLeft}</strong></span>
+    </div>
+  );
+};
 
 export const GameResultModal = ({ 
   gameStatus, 
   targetSong, 
   attemptsCount, 
-  onPlayAgain 
+  onGoHome 
 }) => {
   if (gameStatus !== 'WON' && gameStatus !== 'LOST') return null;
 
   const isWon = gameStatus === 'WON';
+  const youtubeSearchUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(`${targetSong.title} ${targetSong.artist} audio oficial`)}`;
 
   return (
     <div className="w-full max-w-xl mx-auto my-6 p-6 glass-panel rounded-2xl border border-emerald-500/30 shadow-2xl text-center space-y-5 animate-fadeIn relative overflow-hidden">
-      {/* Decorative Glow Background */}
+      {/* Glow de fondo decorativo */}
       <div className={`absolute -top-20 -left-20 w-40 h-40 rounded-full blur-3xl opacity-30 ${isWon ? 'bg-emerald-500' : 'bg-rose-500'}`} />
 
       <div className="relative z-10 space-y-4">
-        {/* Result Icon Header */}
+        {/* Icono de resultado */}
         <div className="flex justify-center">
           {isWon ? (
             <div className="p-4 bg-emerald-500/20 text-emerald-400 rounded-full ring-8 ring-emerald-500/10 animate-bounce">
@@ -30,7 +70,7 @@ export const GameResultModal = ({
           )}
         </div>
 
-        {/* Title */}
+        {/* Título y subtítulo */}
         <div>
           <h2 className="text-2xl font-extrabold text-white flex items-center justify-center gap-2">
             {isWon ? (
@@ -44,12 +84,12 @@ export const GameResultModal = ({
           </h2>
           <p className="text-sm text-slate-400 mt-1">
             {isWon 
-              ? `¡Adivinaste la canción en el intento ${attemptsCount} de 6!`
-              : `Agotaste tus 6 intentos. ¡La canción era:`}
+              ? `¡Adivinaste la canción en el intento ${attemptsCount} de 7!`
+              : `Agotaste tus 7 intentos. ¡La canción era:`}
           </p>
         </div>
 
-        {/* Song Info Card */}
+        {/* Tarjeta con info de la canción */}
         <div className="p-4 bg-slate-900/80 rounded-xl border border-slate-800 flex items-center gap-4 text-left shadow-inner">
           <img 
             src={targetSong.coverUrl} 
@@ -63,20 +103,33 @@ export const GameResultModal = ({
           </div>
         </div>
 
-        {/* Audio unlocked note */}
+        {/* Notificación de audio de 30s desbloqueado */}
         <div className="text-xs text-emerald-400/90 font-medium bg-emerald-950/30 py-2 px-3 rounded-lg border border-emerald-500/20 flex items-center justify-center gap-1.5">
           <Music className="w-3.5 h-3.5" />
           <span>¡Audio de 30s desbloqueado! Puedes usar el reproductor arriba para escuchar más.</span>
         </div>
 
-        {/* Actions */}
-        <div className="flex items-center gap-3 pt-2">
-          <button
-            onClick={onPlayAgain}
-            className="flex-1 py-3 px-4 bg-gradient-to-r from-emerald-500 to-teal-500 text-slate-950 font-bold rounded-xl shadow-lg hover:brightness-110 flex items-center justify-center gap-2 transition-all active:scale-98"
+        {/* Contador regresivo a medianoche */}
+        <MidnightCountdown />
+
+        {/* Acciones principales: Escuchar en YouTube + Probar otra categoría */}
+        <div className="flex flex-col sm:flex-row items-center gap-3 pt-2">
+          <a
+            href={youtubeSearchUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-full sm:flex-1 py-3 px-4 bg-rose-600 hover:bg-rose-500 text-white font-bold rounded-xl shadow-lg flex items-center justify-center gap-2 transition-all active:scale-98"
           >
-            <RefreshCw className="w-4 h-4" />
-            <span>Probar otra canción</span>
+            <Youtube className="w-5 h-5 fill-current" />
+            <span>Escuchar en YouTube</span>
+          </a>
+
+          <button
+            onClick={onGoHome}
+            className="w-full sm:flex-1 py-3 px-4 bg-gradient-to-r from-emerald-500 to-teal-500 text-slate-950 font-bold rounded-xl shadow-lg hover:brightness-110 flex items-center justify-center gap-2 transition-all active:scale-98"
+          >
+            <LayoutGrid className="w-5 h-5" />
+            <span>Probar otra categoría</span>
           </button>
         </div>
       </div>

@@ -1,6 +1,21 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Search, FastForward, CheckCircle, Music } from 'lucide-react';
 
+/**
+ * Normalizador ultra-flexible: remueve tildes, signos de puntuación, comillas, guiones y múltiples espacios.
+ * Convierte p.ej. "Música, Pa' la calle, Bizarrap: Bzrp..." a "musica pa la calle bizarrap bzrp"
+ */
+const normalizeText = (text) => {
+  if (!text) return '';
+  return text
+    .toLowerCase()
+    .normalize('NFD') // Separa caracteres accentuados en letra + diacrítico
+    .replace(/[\u0300-\u036f]/g, '') // Elimina tildes y diacríticos
+    .replace(/[^a-z0-9\s]/g, ' ') // Reemplaza signos de puntuación por espacios
+    .replace(/\s+/g, ' ') // Convierte espacios múltiples en 1 solo
+    .trim();
+};
+
 export const SongSearch = ({ 
   songList, 
   onGuess, 
@@ -13,13 +28,20 @@ export const SongSearch = ({
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
 
-  // Filtrar canciones por título o artista
-  const filteredSongs = query.trim() === '' 
+  const normQuery = normalizeText(query);
+
+  // Filtrar canciones de forma súper flexible ignorando mayúsculas, tildes, comillas y múltiples espacios
+  const filteredSongs = normQuery === '' 
     ? [] 
-    : songList.filter(song => 
-        song.title.toLowerCase().includes(query.toLowerCase()) ||
-        song.artist.toLowerCase().includes(query.toLowerCase())
-      );
+    : songList.filter(song => {
+        const normTitle = normalizeText(song.title);
+        const normArtist = normalizeText(song.artist);
+        const normCombined = `${normTitle} ${normArtist}`;
+
+        return normTitle.includes(normQuery) || 
+               normArtist.includes(normQuery) || 
+               normCombined.includes(normQuery);
+      });
 
   // Cerrar dropdown al hacer clic afuera
   useEffect(() => {
@@ -40,12 +62,15 @@ export const SongSearch = ({
 
   const handleGuessSubmit = (e) => {
     e.preventDefault();
-    if (!selectedSong && query.trim() !== '') {
-      // Si escribió pero no seleccionó de la lista, buscar coincidencia exacta
-      const match = songList.find(s => 
-        `${s.title} - ${s.artist}`.toLowerCase() === query.toLowerCase() ||
-        s.title.toLowerCase() === query.toLowerCase()
-      );
+    if (!selectedSong && normQuery !== '') {
+      // Búsqueda flexible sin tildes si el usuario presionó Enter escribiendo manualmente
+      const match = songList.find(s => {
+        const normTitle = normalizeText(s.title);
+        const normArtist = normalizeText(s.artist);
+        const normCombined = `${normTitle} ${normArtist}`;
+        return normTitle === normQuery || normCombined === normQuery || `${normTitle} - ${normArtist}` === normQuery;
+      });
+
       if (match) {
         onGuess(match);
         setQuery('');
@@ -86,7 +111,7 @@ export const SongSearch = ({
               setIsOpen(true);
             }}
             onFocus={() => setIsOpen(true)}
-            placeholder="Busca por título o artista..."
+            placeholder="Busca por título o artista (ej: musica, pa la calle)..."
             className="w-full py-3.5 px-3 bg-transparent text-slate-100 placeholder-slate-500 text-sm focus:outline-none"
           />
           {query && (

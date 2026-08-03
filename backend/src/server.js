@@ -3,6 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import { initDatabase } from './config/db.js';
 import songRoutes from './routes/songRoutes.js';
+import adminRoutes from './routes/adminRoutes.js';
 
 dotenv.config();
 
@@ -17,14 +18,15 @@ app.use(express.json());
 app.get('/', (req, res) => {
   res.json({
     status: 'online',
-    app: 'En Una Nota API Backend',
-    version: '1.0.0',
+    app: 'Me Suena a... API Backend',
+    version: '1.6.0',
     timestamp: new Date().toISOString()
   });
 });
 
 // Rutas principales de la API
 app.use('/api', songRoutes);
+app.use('/api/admin', adminRoutes);
 
 // Manejador de rutas no encontradas (404)
 app.use((req, res) => {

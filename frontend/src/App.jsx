@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { ATTEMPT_TIMES, TOTAL_ATTEMPTS } from './data/songs';
 import { Header } from './components/Header';
 import { AudioPlayer } from './components/AudioPlayer';
@@ -6,14 +6,34 @@ import { AttemptList } from './components/AttemptList';
 import { SongSearch } from './components/SongSearch';
 import { GameResultModal } from './components/GameResultModal';
 import { HomeView, CATEGORIES } from './components/HomeView';
-import { AlertCircle, RefreshCw } from 'lucide-react';
+import { SuggestSongModal } from './components/SuggestSongModal';
+import AdminView from './views/AdminView';
+import { AlertCircle, RefreshCw, Lightbulb } from 'lucide-react';
 
 const API_BASE_URL = 'http://localhost:4000/api';
 
+// Helper local YYYY-MM-DD sin desfasaje UTC
+const getLocalDateString = () => {
+  const d = new Date();
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 export function App() {
-  // Estado de vista actual ('HOME' | 'GAME')
+  // Estado de vista actual ('HOME' | 'GAME' | 'ADMIN')
   const [currentView, setCurrentView] = useState('HOME');
   const [selectedCategory, setSelectedCategory] = useState('general');
+
+  // Estado para Modal de Sugerencias de Canciones de Usuario
+  const [isSuggestModalOpen, setIsSuggestModalOpen] = useState(false);
+  const [suggestInitialGenre, setSuggestInitialGenre] = useState('rock');
+
+  const handleOpenSuggest = (genreId) => {
+    if (genreId) setSuggestInitialGenre(genreId);
+    setIsSuggestModalOpen(true);
+  };
 
   // Estado de datos desde la API
   const [targetSong, setTargetSong] = useState(null);
@@ -28,28 +48,52 @@ export function App() {
   );
   const [gameStatus, setGameStatus] = useState('PLAYING');
 
+  // Estado del catálogo total de canciones
+  const [totalCatalogCount, setTotalCatalogCount] = useState(0);
+
+  useEffect(() => {
+    fetch(`${API_BASE_URL}/canciones`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && typeof data.count === 'number') {
+          setTotalCatalogCount(data.count);
+        }
+      })
+      .catch(err => console.error("Error cargando total de canciones:", err));
+  }, []);
+
+  // Escuchar Hash o Ruta #admin para abrir el Panel de Control Oculto
+  useEffect(() => {
+    const checkHashRoute = () => {
+      if (window.location.hash === '#admin' || window.location.pathname === '/admin') {
+        setCurrentView('ADMIN');
+      }
+    };
+    checkHashRoute();
+    window.addEventListener('hashchange', checkHashRoute);
+    return () => window.removeEventListener('hashchange', checkHashRoute);
+  }, []);
+
   /**
    * Carga la canción del día y el catálogo según la categoría seleccionada
    */
   const fetchDailySongAndCatalog = async (category) => {
     setIsLoading(true);
     setError(null);
+    setTargetSong(null);
 
     try {
-      // 1. Obtener la canción del día para esta categoría
       const resSong = await fetch(`${API_BASE_URL}/cancion-hoy?categoria=${category}`);
       const dataSong = await resSong.json();
 
-      // 2. Obtener el catálogo para el autocompletado del buscador en esta categoría
       const resCatalog = await fetch(`${API_BASE_URL}/canciones?genero=${category}`);
       const dataCatalog = await resCatalog.json();
 
       if (dataSong.success && dataSong.data) {
         const song = dataSong.data;
-        setTargetSong(song);
-
-        // Restaurar estado guardado de localStorage para esta canción y categoría
-        const storageKey = `en_una_nota_daily_${category}_${song.id}_${song.date || 'today'}`;
+        const todayStr = song.date || getLocalDateString();
+        const storageKey = `en_una_nota_daily_${category}_${todayStr}`;
+        
         const savedState = localStorage.getItem(storageKey);
 
         if (savedState) {
@@ -58,17 +102,23 @@ export function App() {
             setCurrentAttemptIndex(parsed.currentAttemptIndex ?? 0);
             if (parsed.attempts && parsed.attempts.length === TOTAL_ATTEMPTS) {
               setAttempts(parsed.attempts);
+            } else {
+              setAttempts(Array(TOTAL_ATTEMPTS).fill(null).map(() => ({ status: 'pending', guessText: '' })));
             }
             setGameStatus(parsed.gameStatus ?? 'PLAYING');
           } catch (e) {
             console.error("Error al parsear localStorage:", e);
+            setGameStatus('PLAYING');
+            setCurrentAttemptIndex(0);
+            setAttempts(Array(TOTAL_ATTEMPTS).fill(null).map(() => ({ status: 'pending', guessText: '' })));
           }
         } else {
-          // Si no hay estado previo, iniciar partida limpia
           setCurrentAttemptIndex(0);
           setGameStatus('PLAYING');
           setAttempts(Array(TOTAL_ATTEMPTS).fill(null).map(() => ({ status: 'pending', guessText: '' })));
         }
+
+        setTargetSong(song);
       } else {
         setError(dataSong.message || 'No se pudo obtener la canción del día.');
       }
@@ -94,14 +144,18 @@ export function App() {
   };
 
   /**
-   * Guardar estado en localStorage por categoría
+   * Guardar estado en localStorage
    */
   useEffect(() => {
-    if (!targetSong || currentView !== 'GAME') return;
+    if (!targetSong || currentView !== 'GAME' || isLoading) return;
 
-    const storageKey = `en_una_nota_daily_${selectedCategory}_${targetSong.id}_${targetSong.date || 'today'}`;
+    const todayStr = targetSong.date || getLocalDateString();
+    const storageKey = `en_una_nota_daily_${selectedCategory}_${todayStr}`;
+
     try {
       localStorage.setItem(storageKey, JSON.stringify({
+        songId: targetSong.id,
+        date: todayStr,
         currentAttemptIndex,
         attempts,
         gameStatus
@@ -109,65 +163,96 @@ export function App() {
     } catch (e) {
       console.error("Error al guardar en localStorage:", e);
     }
-  }, [targetSong, selectedCategory, currentAttemptIndex, attempts, gameStatus, currentView]);
+  }, [targetSong, selectedCategory, currentAttemptIndex, attempts, gameStatus, currentView, isLoading]);
 
   /**
-   * Sistema de Rachas (Streaks): Actualiza la racha al ganar
+   * Sistema de Rachas Doble (Participación + Victorias)
    */
-  const updateStreakOnWin = (category) => {
-    const todayStr = new Date().toISOString().split('T')[0];
-    const streakKey = `en_una_nota_streak_${category}`;
+  const updateStreaksOnGameEnd = (category, isWin) => {
+    const todayStr = getLocalDateString();
+    const streakKey = `en_una_nota_streaks_${category}`;
 
-    let currentStreak = 0;
+    let playStreak = 0;
+    let winStreak = 0;
+    let lastPlayedDate = null;
     let lastWinDate = null;
 
     try {
       const raw = localStorage.getItem(streakKey);
       if (raw) {
         const parsed = JSON.parse(raw);
-        currentStreak = parsed.currentStreak || 0;
+        playStreak = parsed.playStreak || 0;
+        winStreak = parsed.winStreak || 0;
+        lastPlayedDate = parsed.lastPlayedDate;
         lastWinDate = parsed.lastWinDate;
       }
     } catch (e) {
-      console.error("Error leyendo racha:", e);
+      console.error("Error leyendo rachas:", e);
     }
 
-    if (lastWinDate === todayStr) {
-      // Ya registró la victoria de hoy
+    if (lastPlayedDate === todayStr) {
       return;
     }
 
-    // Calcular la fecha de ayer YYYY-MM-DD
     const yesterday = new Date();
     yesterday.setDate(yesterday.getDate() - 1);
-    const yesterdayStr = yesterday.toISOString().split('T')[0];
+    const yesterdayStr = `${yesterday.getFullYear()}-${String(yesterday.getMonth() + 1).padStart(2, '0')}-${String(yesterday.getDate()).padStart(2, '0')}`;
 
-    let newStreak = 1;
-    if (lastWinDate === yesterdayStr) {
-      newStreak = currentStreak + 1;
+    let newPlayStreak = (lastPlayedDate === yesterdayStr) ? playStreak + 1 : 1;
+
+    let newWinStreak = 0;
+    if (isWin) {
+      newWinStreak = (lastWinDate === yesterdayStr || lastPlayedDate === yesterdayStr) ? winStreak + 1 : 1;
     } else {
-      newStreak = 1;
+      newWinStreak = 0;
     }
 
+    const updatedData = {
+      playStreak: newPlayStreak,
+      winStreak: newWinStreak,
+      lastPlayedDate: todayStr,
+      lastWinDate: isWin ? todayStr : lastWinDate
+    };
+
     try {
-      localStorage.setItem(streakKey, JSON.stringify({
-        currentStreak: newStreak,
-        lastWinDate: todayStr
-      }));
+      localStorage.setItem(streakKey, JSON.stringify(updatedData));
     } catch (e) {
-      console.error("Error guardando racha:", e);
+      console.error("Error guardando rachas:", e);
     }
   };
 
-  // Límite de tiempo actual de reproducción
+  const getActiveCategoryStreaks = () => {
+    try {
+      const raw = localStorage.getItem(`en_una_nota_streaks_${selectedCategory}`);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        return {
+          playStreak: parsed.playStreak || 0,
+          winStreak: parsed.winStreak || 0
+        };
+      }
+    } catch (e) {
+      console.error(e);
+    }
+    return { playStreak: 0, winStreak: 0 };
+  };
+
+  const activeStreaks = getActiveCategoryStreaks();
+
+  const searchCatalog = useMemo(() => {
+    if (!targetSong) return catalog;
+    const exists = catalog.some(
+      s => String(s.id) === String(targetSong.id) || 
+           (s.title.toLowerCase() === targetSong.title.toLowerCase() && s.artist.toLowerCase() === targetSong.artist.toLowerCase())
+    );
+    return exists ? catalog : [targetSong, ...catalog];
+  }, [catalog, targetSong]);
+
   const isGameOver = gameStatus !== 'PLAYING';
   const currentMaxTime = isGameOver 
     ? 30 
-    : ATTEMPT_TIMES[currentAttemptIndex] || 7;
+    : ATTEMPT_TIMES[currentAttemptIndex] || 15;
 
-  /**
-   * Maneja la acción de arriesgar una canción ("Adivinar")
-   */
   const handleGuess = (selectedSong) => {
     if (isGameOver || !targetSong) return;
 
@@ -185,19 +270,17 @@ export function App() {
 
     if (isCorrect) {
       setGameStatus('WON');
-      updateStreakOnWin(selectedCategory);
+      updateStreaksOnGameEnd(selectedCategory, true);
     } else {
       if (currentAttemptIndex < TOTAL_ATTEMPTS - 1) {
         setCurrentAttemptIndex((prev) => prev + 1);
       } else {
         setGameStatus('LOST');
+        updateStreaksOnGameEnd(selectedCategory, false);
       }
     }
   };
 
-  /**
-   * Maneja la acción de saltar el intento ("Saltar")
-   */
   const handleSkip = () => {
     if (isGameOver) return;
 
@@ -212,36 +295,79 @@ export function App() {
       setCurrentAttemptIndex((prev) => prev + 1);
     } else {
       setGameStatus('LOST');
+      updateStreaksOnGameEnd(selectedCategory, false);
     }
   };
 
-  /**
-   * Reinicia la partida actual de la categoría
-   */
-  const handleResetGame = () => {
-    setCurrentAttemptIndex(0);
-    setGameStatus('PLAYING');
-    const freshAttempts = Array(TOTAL_ATTEMPTS).fill(null).map(() => ({ status: 'pending', guessText: '' }));
-    setAttempts(freshAttempts);
-
-    if (targetSong) {
-      const storageKey = `en_una_nota_daily_${selectedCategory}_${targetSong.id}_${targetSong.date || 'today'}`;
-      localStorage.removeItem(storageKey);
-    }
-  };
-
-  // Buscar nombre formateado de la categoría actual
   const activeCategoryObj = CATEGORIES.find(c => c.id === selectedCategory);
   const categoryDisplayName = activeCategoryObj ? activeCategoryObj.name : selectedCategory;
+
+  // RENDER PANTALLA DE ADMIN OCULTA
+  if (currentView === 'ADMIN') {
+    return (
+      <div className="relative">
+        <button
+          onClick={() => {
+            window.location.hash = '';
+            setCurrentView('HOME');
+          }}
+          className="fixed top-4 right-4 z-50 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold rounded-lg border border-slate-700 shadow-lg"
+        >
+          ← Volver al Juego
+        </button>
+        <AdminView />
+      </div>
+    );
+  }
 
   // RENDER PANTALLA PRINCIPAL (HOME)
   if (currentView === 'HOME') {
     return (
       <div className="min-h-screen bg-[#0a0d14] text-slate-100 flex flex-col justify-between">
-        <HomeView onSelectCategory={handleSelectCategory} />
-        <footer className="text-center text-[11px] text-slate-600 pb-6">
-          En Una Nota © 2026 • Juego Diario de Música en Español
+        <HomeView 
+          onSelectCategory={handleSelectCategory} 
+          onOpenSuggest={handleOpenSuggest}
+          totalSongsCount={totalCatalogCount}
+        />
+        
+        <footer className="text-center text-[11px] text-slate-600 pb-6 flex flex-wrap items-center justify-center gap-3">
+          <span>Me Suena a... © 2026</span>
+          <span>•</span>
+          <a
+            href="https://portfolio-2026-changes.vercel.app/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-emerald-400/80 hover:text-emerald-300 font-bold"
+          >
+            Creado por Facundo Bautista Pais
+          </a>
+          <span>•</span>
+          <button 
+            onClick={() => setIsSuggestModalOpen(true)}
+            className="text-amber-400/80 hover:text-amber-300 font-bold flex items-center gap-1"
+          >
+            <Lightbulb className="w-3 h-3 fill-amber-400" />
+            <span>Sugerir Canción</span>
+          </button>
+          <span>•</span>
+          <a 
+            href="#admin" 
+            onClick={(e) => {
+              e.preventDefault();
+              window.location.hash = '#admin';
+              setCurrentView('ADMIN');
+            }} 
+            className="text-slate-700 hover:text-slate-500 underline text-[10px]"
+          >
+            Admin
+          </a>
         </footer>
+
+        <SuggestSongModal 
+          isOpen={isSuggestModalOpen}
+          onClose={() => setIsSuggestModalOpen(false)}
+          initialGenre={suggestInitialGenre}
+        />
       </div>
     );
   }
@@ -295,25 +421,23 @@ export function App() {
   return (
     <div className="min-h-screen bg-[#0a0d14] text-slate-100 flex flex-col justify-between px-4 pb-8">
       <div className="w-full max-w-2xl mx-auto flex-1 flex flex-col">
-        {/* Cabecera con botón para volver a Home y nombre de Categoría */}
         <Header 
-          onResetGame={handleResetGame}
           onGoHome={() => setCurrentView('HOME')}
           categoryName={categoryDisplayName}
-          currentSongIndex={0}
-          totalSongs={catalog.length || 1}
+          playStreak={activeStreaks.playStreak}
+          winStreak={activeStreaks.winStreak}
+          onOpenSuggest={handleOpenSuggest}
         />
 
-        {/* Reproductor de Audio Minimalista con Alta Precisión */}
         <AudioPlayer 
           audioUrl={targetSong.audioUrl}
           startTime={targetSong.startTime || 0}
           maxAllowedTime={currentMaxTime}
           isGameOver={isGameOver}
           attemptTimes={ATTEMPT_TIMES}
+          targetSong={targetSong}
         />
 
-        {/* Lista Visual de los 7 Intentos */}
         <AttemptList 
           attempts={attempts}
           currentAttemptIndex={currentAttemptIndex}
@@ -321,28 +445,60 @@ export function App() {
           isGameOver={isGameOver}
         />
 
-        {/* Buscador Autocompletado consumiendo catálogo real de la categoría */}
         <SongSearch 
-          songList={catalog.length > 0 ? catalog : [targetSong]}
+          songList={searchCatalog}
           onGuess={handleGuess}
           onSkip={handleSkip}
           isGameOver={isGameOver}
           currentAttemptTime={ATTEMPT_TIMES[currentAttemptIndex]}
         />
 
-        {/* Modal / Card de Resultado Final (Victoria / Derrota) */}
         <GameResultModal 
           gameStatus={gameStatus}
           targetSong={targetSong}
           attemptsCount={currentAttemptIndex + 1}
-          onPlayAgain={handleResetGame}
+          onGoHome={() => setCurrentView('HOME')}
         />
       </div>
 
-      {/* Footer minimalista */}
-      <footer className="text-center text-[11px] text-slate-600 pt-6">
-        En Una Nota © 2026 • Categoría {categoryDisplayName} • Canción Diaria
+      <footer className="text-center text-[11px] text-slate-600 pt-6 flex flex-wrap items-center justify-center gap-3">
+        <span>Me Suena a... © 2026 • Categoría {categoryDisplayName}</span>
+        <span>•</span>
+        <a
+          href="https://portfolio-2026-changes.vercel.app/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-emerald-400/80 hover:text-emerald-300 font-bold"
+        >
+          Creado por Facundo Bautista Pais
+        </a>
+        <span>•</span>
+        <button 
+          onClick={() => setIsSuggestModalOpen(true)}
+          className="text-amber-400/80 hover:text-amber-300 font-bold flex items-center gap-1"
+        >
+          <Lightbulb className="w-3 h-3 fill-amber-400" />
+          <span>Sugerir Canción</span>
+        </button>
+        <span>•</span>
+        <a 
+          href="#admin" 
+          onClick={(e) => {
+            e.preventDefault();
+            window.location.hash = '#admin';
+            setCurrentView('ADMIN');
+          }} 
+          className="text-slate-700 hover:text-slate-500 underline text-[10px]"
+        >
+          Admin
+        </a>
       </footer>
+
+      <SuggestSongModal 
+        isOpen={isSuggestModalOpen}
+        onClose={() => setIsSuggestModalOpen(false)}
+        initialGenre={suggestInitialGenre}
+      />
     </div>
   );
 }

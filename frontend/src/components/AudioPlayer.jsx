@@ -1,12 +1,13 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Play, Pause, Volume2, AlertCircle } from 'lucide-react';
+import { Play, Pause, Volume2, AlertCircle, Calendar, Youtube, Lightbulb } from 'lucide-react';
 
 export const AudioPlayer = ({ 
   audioUrl, 
   startTime = 0,
   maxAllowedTime, 
   isGameOver = false,
-  attemptTimes = [0.3, 0.8, 1.5, 2.5, 4, 5, 7]
+  attemptTimes = [0.5, 1, 2, 3, 5, 10, 15],
+  targetSong = null
 }) => {
   const audioRef = useRef(null);
   const animFrameRef = useRef(null);
@@ -15,9 +16,18 @@ export const AudioPlayer = ({
   const [hasError, setHasError] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
-  // Duración máxima de la línea de tiempo (7s en juego, 30s en fin de juego)
-  const maxGameDuration = attemptTimes[attemptTimes.length - 1] || 7;
+  // Duración máxima de la línea de tiempo (15s en juego, 30s en fin de juego)
+  const maxGameDuration = attemptTimes[attemptTimes.length - 1] || 15;
   const totalTimelineDuration = isGameOver ? 30 : maxGameDuration;
+
+  // Formateador de vistas de YouTube
+  const formatExactViews = (views) => {
+    const rawViews = Number(views || 0);
+    if (!rawViews || rawViews === 0) return '+10M';
+    if (rawViews >= 1000000) return `${(rawViews / 1000000).toFixed(1)}M`;
+    if (rawViews >= 1000) return `${(rawViews / 1000).toFixed(0)}K`;
+    return rawViews.toString();
+  };
 
   // Detener bucle de animación
   const stopAnimation = () => {
@@ -77,7 +87,6 @@ export const AudioPlayer = ({
 
   /**
    * Bucle de Alta Precisión (RequestAnimationFrame @ 60fps/120fps)
-   * Garantiza que la barra avance en tiempo real sincrónico con el audio sin lag de transiciones CSS
    */
   const updatePlaybackLoop = () => {
     if (!audioRef.current) return;
@@ -85,11 +94,9 @@ export const AudioPlayer = ({
     const audio = audioRef.current;
     const elapsed = Math.max(0, audio.currentTime - startTime);
 
-    // Si no ha terminado el juego y alcanzó o superó el límite del intento
     if (!isGameOver && elapsed >= maxAllowedTime) {
       audio.pause();
       audio.currentTime = startTime;
-      // Fijar el tiempo exactamente en maxAllowedTime para que la barra LLEGUE AL FINAL VISUALMENTE
       setCurrentTime(maxAllowedTime);
       setIsPlaying(false);
       stopAnimation();
@@ -141,26 +148,54 @@ export const AudioPlayer = ({
     }
   };
 
-  // Formateador de tiempo legible (0.30s, 0.80s, etc.)
   const formatTime = (timeInSec) => {
     return `${timeInSec.toFixed(2)}s`;
   };
 
-  // Porcentaje exacto de progreso de la barra verde
   const progressPercentage = Math.min(100, (currentTime / totalTimelineDuration) * 100);
 
   return (
-    <div className="w-full max-w-xl mx-auto my-4 p-5 glass-panel rounded-2xl border border-slate-800 shadow-2xl space-y-4">
-      {/* Visual Header con tiempo límite actual */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2 text-xs font-semibold text-slate-400">
-          <Volume2 className="w-4 h-4 text-emerald-400" />
-          <span>Fragmento: <strong className="text-emerald-400 font-mono text-sm">{isGameOver ? '30s (Completo)' : `${maxAllowedTime}s`}</strong></span>
+    <div className="w-full max-w-xl mx-auto my-3 sm:my-4 p-4 sm:p-5 glass-panel rounded-2xl border border-slate-800 shadow-2xl space-y-3 sm:space-y-4">
+      {/* SECCIÓN SUPERIOR DE PISTAS */}
+      {targetSong && (
+        <div className="flex flex-wrap items-center justify-between gap-1.5 sm:gap-2 pb-2.5 sm:pb-3 border-b border-slate-800/80">
+          <div className="flex items-center gap-1.5 text-amber-400 font-extrabold text-xs uppercase tracking-wider">
+            <Lightbulb className="w-4 h-4 text-amber-400 animate-pulse shrink-0" />
+            <span>Pistas:</span>
+          </div>
+
+          <div className="flex items-center gap-2 text-xs font-bold flex-wrap">
+            {/* Pista 1: Año de Lanzamiento */}
+            <div 
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-slate-900/90 text-slate-200 border border-slate-800 shadow-sm"
+              title="Año oficial de lanzamiento"
+            >
+              <Calendar className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+              <span>Año: <strong className="text-cyan-300 font-mono text-xs">{targetSong.year || '2000'}</strong></span>
+            </div>
+
+            {/* Pista 2: Visualizaciones en YouTube */}
+            <div 
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-slate-900/90 text-slate-200 border border-rose-500/30 shadow-sm"
+              title="Visualizaciones acumuladas en YouTube"
+            >
+              <Youtube className="w-3.5 h-3.5 text-rose-400 shrink-0 fill-current" />
+              <span>YouTube: <strong className="text-rose-300 font-mono text-xs">+{formatExactViews(targetSong.reproducciones || targetSong.views)}</strong></span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ENCABEZADO DEL REPRODUCTOR */}
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-400 shrink-0">
+          <Volume2 className="w-4 h-4 text-emerald-400 shrink-0" />
+          <span>Fragmento: <strong className="text-emerald-400 font-mono text-xs sm:text-sm">{isGameOver ? '30s (Completo)' : `${maxAllowedTime}s`}</strong></span>
         </div>
 
-        {/* Barras de visualizer animadas */}
-        <div className="flex items-center gap-1 h-5">
-          {[40, 70, 30, 90, 60, 100, 45, 80, 50, 35].map((height, i) => (
+        {/* Barras de Ecualizador Animado */}
+        <div className="hidden xs:flex items-center gap-1 h-5">
+          {[40, 70, 30, 90, 60, 100, 45, 80].map((height, i) => (
             <div
               key={i}
               className={`w-1 rounded-full transition-all duration-150 ${
@@ -176,53 +211,68 @@ export const AudioPlayer = ({
           ))}
         </div>
 
-        <div className="text-xs font-mono font-bold text-slate-300">
+        <div className="text-xs font-mono font-bold text-slate-200 shrink-0 whitespace-nowrap bg-slate-900/80 px-2.5 py-1 rounded-lg border border-slate-800">
           {formatTime(currentTime)} / {isGameOver ? '30.00s' : formatTime(maxAllowedTime)}
         </div>
       </div>
 
-      {/* Contenedor de Barra de Progreso con Marcadores Ticks Escalonados */}
-      <div className="relative w-full">
-        {/* Track de Fondo */}
-        <div className="w-full h-3.5 bg-slate-950/80 rounded-full overflow-hidden border border-slate-800 relative">
+      {/* NAVEGACIÓN Y MARCADORES LIMPIOS (SIN MINICARDS) INTERCALADOS ARRIBA Y ABAJO */}
+      <div className="relative w-full py-7 my-2 flex items-center justify-center">
+        {/* BARRA DE PROGRESO CENTRADA EN EL MEDIO */}
+        <div className="w-full h-4 bg-slate-950/90 rounded-full overflow-hidden border border-slate-700/80 relative z-10 shadow-inner">
           {!isGameOver && (
             <div 
-              className="absolute left-0 top-0 bottom-0 bg-emerald-950/40 border-r border-emerald-500/50 transition-all duration-200"
+              className="absolute left-0 top-0 bottom-0 bg-emerald-950/50 border-r-2 border-emerald-400/80 transition-all duration-200"
               style={{ width: `${(maxAllowedTime / totalTimelineDuration) * 100}%` }}
             />
           )}
 
           <div 
-            className="h-full bg-gradient-to-r from-emerald-500 via-teal-400 to-cyan-400 rounded-full shadow-lg shadow-emerald-500/50"
+            className="h-full bg-gradient-to-r from-emerald-500 via-teal-400 to-cyan-400 rounded-full shadow-lg shadow-emerald-500/60"
             style={{ width: `${progressPercentage}%` }}
           />
         </div>
 
-        {/* Ticks Escalonados: Líneas de longitud creciente (8px, 15px, 22px...) para evitar superposición de etiquetas */}
-        <div className="relative w-full h-16 mt-1 overflow-visible">
+        {/* TICKS INTERCALADOS (ARRIBA Y ABAJO) SIN ATRAVESAR LA BARRA Y SIN MINICARDS */}
+        <div className="absolute inset-x-0 top-0 bottom-0 pointer-events-none">
           {attemptTimes.map((time, idx) => {
             const positionPct = (time / totalTimelineDuration) * 100;
             const isUnlocked = time <= maxAllowedTime || isGameOver;
-
-            // Longitud de la línea verde creciente paso a paso (8px, 15px, 22px, 29px, 36px, 43px, 50px)
-            const lineHeightPx = 8 + (idx * 7);
+            const isTop = idx % 2 === 0; // Pares arriba (0.5s, 2s, 5s, 15s), Impares abajo (1s, 3s, 10s)
 
             return (
               <div 
                 key={idx}
-                className="absolute transform -translate-x-1/2 flex flex-col items-center"
-                style={{ left: `${positionPct}%` }}
+                className="absolute transform -translate-x-1/2 flex flex-col items-center z-20"
+                style={{ 
+                  left: `${positionPct}%`,
+                  ...(isTop 
+                    ? { bottom: 'calc(50% + 8px)' } 
+                    : { top: 'calc(50% + 8px)' }
+                  )
+                }}
               >
-                {/* Línea verde con altura incremental */}
-                <div 
-                  className={`w-0.5 ${isUnlocked ? 'bg-emerald-400 shadow-sm shadow-emerald-400' : 'bg-slate-700'}`}
-                  style={{ height: `${lineHeightPx}px` }}
-                />
-                
-                {/* Texto del tiempo colocado al final de cada línea en cascada */}
-                <span className={`text-[10px] font-mono mt-0.5 whitespace-nowrap ${isUnlocked ? 'text-emerald-400 font-extrabold' : 'text-slate-600'}`}>
-                  {time}s
-                </span>
+                {isTop ? (
+                  /* MARCADOR DE ARRIBA: Texto simple + línea que toca exactamente la barra */
+                  <div className="flex flex-col items-center">
+                    <span className={`text-[10px] sm:text-xs font-mono tracking-tight leading-none ${
+                      isUnlocked ? 'text-emerald-400 font-extrabold' : 'text-slate-500 font-semibold'
+                    }`}>
+                      {time}s
+                    </span>
+                    <div className={`w-0.5 h-2.5 mt-1 ${isUnlocked ? 'bg-emerald-400' : 'bg-slate-700'}`} />
+                  </div>
+                ) : (
+                  /* MARCADOR DE ABAJO: Línea que toca exactamente la barra + Texto simple */
+                  <div className="flex flex-col items-center">
+                    <div className={`w-0.5 h-2.5 mb-1 ${isUnlocked ? 'bg-emerald-400' : 'bg-slate-700'}`} />
+                    <span className={`text-[10px] sm:text-xs font-mono tracking-tight leading-none ${
+                      isUnlocked ? 'text-emerald-400 font-extrabold' : 'text-slate-500 font-semibold'
+                    }`}>
+                      {time}s
+                    </span>
+                  </div>
+                )}
               </div>
             );
           })}
@@ -231,18 +281,18 @@ export const AudioPlayer = ({
 
       {/* Alerta de Error */}
       {hasError && (
-        <div className="flex items-center gap-2 p-3 bg-rose-950/50 border border-rose-500/30 rounded-xl text-rose-300 text-xs justify-center">
+        <div className="flex items-center gap-2 p-2.5 bg-rose-950/50 border border-rose-500/30 rounded-xl text-rose-300 text-xs justify-center">
           <AlertCircle className="w-4 h-4 shrink-0" />
           <span>{errorMessage}</span>
         </div>
       )}
 
-      {/* Botón Principal de Play / Pause */}
-      <div className="flex justify-center pt-2">
+      {/* Botón Principal Play / Pause */}
+      <div className="flex justify-center pt-1">
         <button
           onClick={togglePlayPause}
           disabled={hasError}
-          className={`w-16 h-16 rounded-full flex items-center justify-center transition-all duration-200 transform active:scale-95 shadow-xl ${
+          className={`w-15 h-15 sm:w-16 sm:h-16 rounded-full flex items-center justify-center transition-all duration-200 transform active:scale-95 shadow-xl ${
             hasError
               ? 'bg-slate-800 text-slate-600 border border-slate-700 cursor-not-allowed'
               : isPlaying 

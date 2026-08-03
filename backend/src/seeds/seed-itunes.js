@@ -1,5 +1,15 @@
 import { pool, initDatabase } from '../config/db.js';
 
+// Helper para obtener fecha local YYYY-MM-DD agregando offset de días
+const getLocalDateString = (addDays = 0) => {
+  const d = new Date();
+  d.setDate(d.getDate() + addDays);
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 // Configuración de búsquedas por categoría/género para el poblado masivo
 const SEARCH_CONFIGS = [
   { search: 'Rock Nacional Argentino', genre: 'rock' },
@@ -18,6 +28,7 @@ async function seedMassiveItunesCatalog() {
     console.log('🚀 Iniciando sembrado masivo de canciones desde iTunes API...\n');
 
     let totalSongsAdded = 0;
+    const allSongIds = [];
 
     for (const config of SEARCH_CONFIGS) {
       console.log(`🔎 Buscando categoría "${config.genre.toUpperCase()}" (Búsqueda: "${config.search}")...`);
@@ -58,17 +69,24 @@ async function seedMassiveItunesCatalog() {
           config.genre
         ]);
 
+        let songId;
         if (insertRes.rows.length > 0) {
           addedInGenre++;
-          genreSongIds.push(insertRes.rows[0].id);
+          songId = insertRes.rows[0].id;
         } else {
-          // Si ya existía, obtener su ID para la programación diaria
           const existingRes = await pool.query(
             `SELECT id FROM canciones WHERE LOWER(titulo) = LOWER($1) AND LOWER(artista) = LOWER($2);`,
             [track.trackName, track.artistName]
           );
           if (existingRes.rows.length > 0) {
-            genreSongIds.push(existingRes.rows[0].id);
+            songId = existingRes.rows[0].id;
+          }
+        }
+
+        if (songId) {
+          genreSongIds.push(songId);
+          if (!allSongIds.includes(songId)) {
+            allSongIds.push(songId);
           }
         }
       }
@@ -76,12 +94,9 @@ async function seedMassiveItunesCatalog() {
       totalSongsAdded += addedInGenre;
       console.log(`  ✅ ${addedInGenre} canciones nuevas insertadas para la categoría "${config.genre}".`);
 
-      // 2. Programar canciones diarias para esta categoría en cancion_diaria (para hoy y los próximos días)
-      const today = new Date();
+      // Programar canciones diarias para esta categoría específica
       for (let i = 0; i < Math.min(genreSongIds.length, 30); i++) {
-        const dateObj = new Date(today);
-        dateObj.setDate(today.getDate() + i);
-        const fechaStr = dateObj.toISOString().split('T')[0];
+        const fechaStr = getLocalDateString(i);
         const cancionId = genreSongIds[i];
 
         await pool.query(`
@@ -95,7 +110,23 @@ async function seedMassiveItunesCatalog() {
       console.log(`  📅 Canciones diarias programadas para categoría "${config.genre}".\n`);
     }
 
-    console.log(`🎉 ¡Poblado masivo completado con éxito!`);
+    // Programar canciones diarias para el MIX GENERAL utilizando todo el catálogo
+    if (allSongIds.length > 0) {
+      console.log(`📅 Programando canciones diarias para el Mix General (${allSongIds.length} canciones disponibles)...`);
+      for (let i = 0; i < Math.min(allSongIds.length, 30); i++) {
+        const fechaStr = getLocalDateString(i);
+        const cancionId = allSongIds[i];
+
+        await pool.query(`
+          INSERT INTO cancion_diaria (fecha, categoria, cancion_id)
+          VALUES ($1, $2, $3)
+          ON CONFLICT (fecha, categoria) 
+          DO UPDATE SET cancion_id = EXCLUDED.cancion_id;
+        `, [fechaStr, 'general', cancionId]);
+      }
+    }
+
+    console.log(`🎉 ¡Poblado masivo y programación diaria completados con éxito!`);
     console.log(`📊 Total de nuevas canciones registradas en la Base de Datos: ${totalSongsAdded}`);
 
   } catch (error) {
