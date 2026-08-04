@@ -8,7 +8,7 @@ import { GameResultModal } from './components/GameResultModal';
 import { HomeView, CATEGORIES } from './components/HomeView';
 import { SuggestSongModal } from './components/SuggestSongModal';
 import AdminView from './views/AdminView';
-import { AlertCircle, RefreshCw, Lightbulb } from 'lucide-react';
+import { AlertCircle, RefreshCw, Lightbulb, Zap } from 'lucide-react';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
 
