@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Play, Pause, Volume2, AlertCircle, Calendar, Youtube, Lightbulb } from 'lucide-react';
+import { Play, Pause, Volume2, Volume1, VolumeX, AlertCircle, Calendar, Youtube, Lightbulb } from 'lucide-react';
 
 export const AudioPlayer = ({ 
   audioUrl, 
@@ -15,6 +15,8 @@ export const AudioPlayer = ({
   const [currentTime, setCurrentTime] = useState(0);
   const [hasError, setHasError] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  const [volume, setVolume] = useState(1);
+  const [isMuted, setIsMuted] = useState(false);
 
   // Duración máxima de la línea de tiempo (15s en juego, 30s en fin de juego)
   const maxGameDuration = attemptTimes[attemptTimes.length - 1] || 15;
@@ -53,6 +55,7 @@ export const AudioPlayer = ({
     }
 
     const audio = audioRef.current;
+    audio.volume = isMuted ? 0 : volume;
     audio.currentTime = startTime;
     setCurrentTime(0);
     setIsPlaying(false);
@@ -186,29 +189,53 @@ export const AudioPlayer = ({
         </div>
       )}
 
-      {/* ENCABEZADO DEL REPRODUCTOR */}
-      <div className="flex items-center justify-between gap-2">
+      {/* ENCABEZADO DEL REPRODUCTOR CON CONTROL DE VOLUMEN */}
+      <div className="flex items-center justify-between gap-2 flex-wrap sm:flex-nowrap">
         <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-400 shrink-0">
           <Volume2 className="w-4 h-4 text-emerald-400 shrink-0" />
           <span>Fragmento: <strong className="text-emerald-400 font-mono text-xs sm:text-sm">{isGameOver ? '30s (Completo)' : `${maxAllowedTime}s`}</strong></span>
         </div>
 
-        {/* Barras de Ecualizador Animado */}
-        <div className="hidden xs:flex items-center gap-1 h-5">
-          {[40, 70, 30, 90, 60, 100, 45, 80].map((height, i) => (
-            <div
-              key={i}
-              className={`w-1 rounded-full transition-all duration-150 ${
-                isPlaying 
-                  ? 'bg-gradient-to-t from-emerald-500 to-cyan-400 animate-pulse' 
-                  : 'bg-slate-700'
-              }`}
-              style={{
-                height: isPlaying ? `${Math.max(15, (height * Math.random()) + 20)}%` : '20%',
-                animationDelay: `${i * 0.05}s`
-              }}
-            />
-          ))}
+        {/* Control de Volumen Interactivo */}
+        <div className="flex items-center gap-2 bg-slate-900/90 px-2.5 py-1 rounded-xl border border-slate-800 shadow-inner">
+          <button
+            type="button"
+            onClick={() => {
+              const nextMute = !isMuted;
+              setIsMuted(nextMute);
+              if (audioRef.current) {
+                audioRef.current.volume = nextMute ? 0 : volume;
+              }
+            }}
+            className="text-slate-400 hover:text-emerald-400 transition-colors p-0.5"
+            title={isMuted ? "Desmutear" : "Mutear"}
+          >
+            {isMuted || volume === 0 ? (
+              <VolumeX className="w-4 h-4 text-rose-400" />
+            ) : volume < 0.5 ? (
+              <Volume1 className="w-4 h-4 text-emerald-400" />
+            ) : (
+              <Volume2 className="w-4 h-4 text-emerald-400" />
+            )}
+          </button>
+
+          <input
+            type="range"
+            min="0"
+            max="1"
+            step="0.05"
+            value={isMuted ? 0 : volume}
+            onChange={(e) => {
+              const val = parseFloat(e.target.value);
+              setVolume(val);
+              setIsMuted(val === 0);
+              if (audioRef.current) {
+                audioRef.current.volume = val;
+              }
+            }}
+            className="w-16 sm:w-20 h-1.5 bg-slate-700 accent-emerald-400 rounded-lg cursor-pointer"
+            title={`Volumen: ${Math.round((isMuted ? 0 : volume) * 100)}%`}
+          />
         </div>
 
         <div className="text-xs font-mono font-bold text-slate-200 shrink-0 whitespace-nowrap bg-slate-900/80 px-2.5 py-1 rounded-lg border border-slate-800">

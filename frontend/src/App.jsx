@@ -376,11 +376,21 @@ export function App() {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-[#0a0d14] flex flex-col items-center justify-center p-4">
-        <div className="glass-panel p-8 rounded-2xl border border-emerald-500/30 flex flex-col items-center gap-4 text-center max-w-sm">
+        <div className="glass-panel p-6 sm:p-8 rounded-3xl border border-emerald-500/30 flex flex-col items-center gap-4 text-center max-w-sm shadow-2xl">
           <div className="w-12 h-12 rounded-full border-4 border-emerald-500/20 border-t-emerald-400 animate-spin" />
           <div>
             <h2 className="font-bold text-lg text-slate-100">Cargando canción ({categoryDisplayName})...</h2>
-            <p className="text-xs text-slate-400 mt-1">Conectando con la API Backend</p>
+            <p className="text-xs text-slate-400 mt-1">Conectando con el servidor backend...</p>
+          </div>
+
+          <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-medium leading-relaxed space-y-1">
+            <div className="font-extrabold flex items-center justify-center gap-1.5 text-amber-400">
+              <Zap className="w-4 h-4" />
+              <span>Aviso Versión Beta</span>
+            </div>
+            <p className="text-[11px] text-amber-200/90">
+              Al usar servidores gratuitos, la primera partida del día puede tardar unos 15 a 30 segundos en cargar la categoría. ¡Gracias por la paciencia!
+            </p>
           </div>
         </div>
       </div>
