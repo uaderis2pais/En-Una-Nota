@@ -5,75 +5,73 @@ export const Header = ({ onGoHome, categoryName, playStreak = 0, winStreak = 0, 
   const [showHelp, setShowHelp] = useState(false);
 
   return (
-    <header className="w-full max-w-xl mx-auto pt-6 pb-4 px-4 flex flex-col items-center border-b border-slate-800/80">
-      <div className="w-full flex items-center justify-between">
-        {/* Navegación a Home, Instrucciones y Sugerir Canción */}
-        <div className="flex items-center gap-1">
+    <header className="w-full max-w-xl mx-auto pt-4 pb-3 px-3 sm:px-4 flex flex-col items-center border-b border-slate-800/80">
+      <div className="w-full flex items-center justify-between relative min-h-[44px]">
+        {/* Navegación Izquierda: Home, Instrucciones y Sugerir Canción */}
+        <div className="flex items-center gap-0.5 sm:gap-1 z-10">
           {onGoHome && (
             <button
               onClick={onGoHome}
-              className="p-2 text-slate-400 hover:text-emerald-400 hover:bg-slate-800/60 rounded-full transition-all"
+              className="p-1.5 sm:p-2 text-slate-400 hover:text-emerald-400 hover:bg-slate-800/60 rounded-full transition-all"
               title="Volver a Inicio"
             >
-              <Home className="w-5 h-5" />
+              <Home className="w-4 h-4 sm:w-5 sm:h-5" />
             </button>
           )}
 
           <button 
             onClick={() => setShowHelp(!showHelp)}
-            className="p-2 text-slate-400 hover:text-emerald-400 hover:bg-slate-800/60 rounded-full transition-all"
+            className="p-1.5 sm:p-2 text-slate-400 hover:text-emerald-400 hover:bg-slate-800/60 rounded-full transition-all"
             title="Cómo jugar"
           >
-            <HelpCircle className="w-5 h-5" />
+            <HelpCircle className="w-4 h-4 sm:w-5 sm:h-5" />
           </button>
 
           {onOpenSuggest && (
             <button 
               onClick={onOpenSuggest}
-              className="p-2 text-amber-400 hover:text-amber-300 hover:bg-amber-500/10 rounded-full transition-all"
+              className="p-1.5 sm:p-2 text-amber-400 hover:text-amber-300 hover:bg-amber-500/10 rounded-full transition-all"
               title="Sugerir una canción"
             >
-              <Lightbulb className="w-5 h-5 fill-amber-400/20" />
+              <Lightbulb className="w-4 h-4 sm:w-5 sm:h-5 fill-amber-400/20" />
             </button>
           )}
         </div>
 
-        {/* Logo / Título */}
-        <div className="flex items-center gap-2.5 cursor-pointer" onClick={onGoHome}>
-          <div className="p-2 bg-gradient-to-tr from-emerald-500 to-cyan-500 rounded-xl shadow-lg shadow-emerald-500/20 text-slate-950 font-bold">
-            <Music2 className="w-6 h-6 stroke-[2.5]" />
-          </div>
-          <div className="text-center">
-            <h1 className="text-2xl font-extrabold tracking-tight bg-gradient-to-r from-white via-slate-200 to-emerald-400 bg-clip-text text-transparent">
-              ME SUENA A...
-            </h1>
-            {categoryName ? (
-              <p className="text-[10px] uppercase font-bold tracking-widest text-emerald-400/90">
-                Categoría: <span className="text-white">{categoryName}</span>
-              </p>
-            ) : (
-              <p className="text-[10px] uppercase font-bold tracking-widest text-emerald-400/90">
-                Adivina la Canción en Español
-              </p>
-            )}
-          </div>
+        {/* Título Perfectamente Centrado (Sin Icono Verde para Maximizar Espacio en Mobile) */}
+        <div 
+          className="absolute left-1/2 -translate-x-1/2 text-center cursor-pointer max-w-[45%] xs:max-w-[55%] sm:max-w-none"
+          onClick={onGoHome}
+        >
+          <h1 className="text-lg sm:text-2xl font-black tracking-tight bg-gradient-to-r from-white via-slate-100 to-emerald-400 bg-clip-text text-transparent truncate">
+            ME SUENA A...
+          </h1>
+          {categoryName ? (
+            <p className="text-[9px] sm:text-[10px] uppercase font-bold tracking-wider text-emerald-400/90 truncate">
+              Categoría: <span className="text-white">{categoryName}</span>
+            </p>
+          ) : (
+            <p className="text-[9px] sm:text-[10px] uppercase font-bold tracking-wider text-emerald-400/90 truncate">
+              Adivina la Canción
+            </p>
+          )}
         </div>
 
-        {/* Rachas visibles arriba a la derecha (Participación + Victorias) */}
-        <div className="flex items-center gap-2">
+        {/* Rachas Derecha: Participación + Victorias */}
+        <div className="flex items-center gap-1 sm:gap-2 z-10">
           <div 
-            className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 font-extrabold text-xs shadow-md shadow-amber-500/10"
+            className="flex items-center gap-1 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 font-extrabold text-[10px] sm:text-xs shadow-sm"
             title="Racha de participación diaria"
           >
-            <Flame className="w-3.5 h-3.5 fill-amber-400 text-amber-500 animate-pulse" />
+            <Flame className="w-3 h-3 sm:w-3.5 sm:h-3.5 fill-amber-400 text-amber-500 animate-pulse" />
             <span>{playStreak}</span>
           </div>
 
           <div 
-            className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-extrabold text-xs shadow-md shadow-emerald-500/10"
+            className="flex items-center gap-1 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-extrabold text-[10px] sm:text-xs shadow-sm"
             title="Racha de victorias acumuladas"
           >
-            <Trophy className="w-3.5 h-3.5 fill-emerald-400 text-emerald-500" />
+            <Trophy className="w-3 h-3 sm:w-3.5 sm:h-3.5 fill-emerald-400 text-emerald-500" />
             <span>{winStreak}</span>
           </div>
         </div>
