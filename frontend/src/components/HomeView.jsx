@@ -14,7 +14,8 @@ import {
   CheckCircle2,
   XCircle,
   Eye,
-  Lightbulb
+  Lightbulb,
+  Smartphone
 } from 'lucide-react';
 import { FAQ } from './FAQ';
 import { DeveloperCard } from './DeveloperCard';
@@ -99,7 +100,7 @@ export const GENRE_CATEGORIES = [
 
 export const CATEGORIES = [FEATURED_CATEGORY, ...GENRE_CATEGORIES];
 
-export function HomeView({ onSelectCategory, onOpenSuggest, totalSongsCount }) {
+export function HomeView({ onSelectCategory, onOpenSuggest, onOpenPwa, totalSongsCount }) {
   // Helper local YYYY-MM-DD sin desfasaje UTC
   const getLocalDateString = () => {
     const d = new Date();
@@ -183,6 +184,19 @@ export function HomeView({ onSelectCategory, onOpenSuggest, totalSongsCount }) {
         <p className="text-slate-400 text-xs sm:text-base max-w-xs sm:max-w-md mx-auto">
           ¿Puedes adivinar la canción del día en solo unos milisegundos?
         </p>
+
+        {/* Botón de Invitación a Descargar App / PWA */}
+        {onOpenPwa && (
+          <div className="pt-1 flex justify-center">
+            <button
+              onClick={onOpenPwa}
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-slate-900/90 hover:bg-slate-800 border border-cyan-500/40 text-cyan-300 text-[10px] sm:text-xs font-bold transition-all shadow-lg hover:border-cyan-400 active:scale-95 group"
+            >
+              <Smartphone className="w-3.5 h-3.5 text-cyan-400 group-hover:scale-110 transition-transform" />
+              <span>📲 Instalar App Celular (Web App / PWA)</span>
+            </button>
+          </div>
+        )}
       </div>
 
       {/* BANNER DESTACADO: MIX GENERAL (DESAFÍO PRINCIPAL - COMPACTO EN MOBILE) */}

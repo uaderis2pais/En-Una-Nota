@@ -7,9 +7,10 @@ import { SongSearch } from './components/SongSearch';
 import { GameResultModal } from './components/GameResultModal';
 import { HomeView, CATEGORIES } from './components/HomeView';
 import { SuggestSongModal } from './components/SuggestSongModal';
+import { InstallPwaModal } from './components/InstallPwaModal';
 import { MusicalBackground } from './components/MusicalBackground';
 import AdminView from './views/AdminView';
-import { AlertCircle, RefreshCw, Lightbulb, Zap, FastForward } from 'lucide-react';
+import { AlertCircle, RefreshCw, Lightbulb, Zap, FastForward, Smartphone } from 'lucide-react';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
 
@@ -27,9 +28,10 @@ export function App() {
   const [currentView, setCurrentView] = useState('HOME');
   const [selectedCategory, setSelectedCategory] = useState('general');
 
-  // Estado para Modal de Sugerencias de Canciones de Usuario
+  // Estado para Modal de Sugerencias de Canciones de Usuario y PWA
   const [isSuggestModalOpen, setIsSuggestModalOpen] = useState(false);
   const [suggestInitialGenre, setSuggestInitialGenre] = useState('rock');
+  const [isPwaModalOpen, setIsPwaModalOpen] = useState(false);
 
   const handleOpenSuggest = (genreId) => {
     if (genreId) setSuggestInitialGenre(genreId);
@@ -329,7 +331,13 @@ export function App() {
         <HomeView 
           onSelectCategory={handleSelectCategory} 
           onOpenSuggest={handleOpenSuggest}
+          onOpenPwa={() => setIsPwaModalOpen(true)}
           totalSongsCount={totalCatalogCount}
+        />
+        
+        <InstallPwaModal 
+          isOpen={isPwaModalOpen} 
+          onClose={() => setIsPwaModalOpen(false)} 
         />
         
         <footer className="text-center text-[11px] text-slate-600 pb-6 flex flex-wrap items-center justify-center gap-3">
@@ -350,6 +358,14 @@ export function App() {
           >
             <Lightbulb className="w-3 h-3 fill-amber-400" />
             <span>Sugerir Canción</span>
+          </button>
+          <span>•</span>
+          <button 
+            onClick={() => setIsPwaModalOpen(true)}
+            className="text-cyan-400/90 hover:text-cyan-300 font-bold flex items-center gap-1"
+          >
+            <Smartphone className="w-3 h-3 text-cyan-400" />
+            <span>📲 Descargar App Celular</span>
           </button>
           <span>•</span>
           <a 
@@ -440,6 +456,12 @@ export function App() {
           playStreak={activeStreaks.playStreak}
           winStreak={activeStreaks.winStreak}
           onOpenSuggest={handleOpenSuggest}
+          onOpenPwa={() => setIsPwaModalOpen(true)}
+        />
+
+        <InstallPwaModal 
+          isOpen={isPwaModalOpen} 
+          onClose={() => setIsPwaModalOpen(false)} 
         />
 
         <AudioPlayer 

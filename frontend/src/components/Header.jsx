@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
-import { Music2, HelpCircle, Volume2, Home, Flame, Trophy, Lightbulb } from 'lucide-react';
+import { Music2, HelpCircle, Volume2, Home, Flame, Trophy, Lightbulb, Smartphone } from 'lucide-react';
 
-export const Header = ({ onGoHome, categoryName, playStreak = 0, winStreak = 0, onOpenSuggest }) => {
+export const Header = ({ onGoHome, categoryName, playStreak = 0, winStreak = 0, onOpenSuggest, onOpenPwa }) => {
   const [showHelp, setShowHelp] = useState(false);
 
   return (
     <header className="w-full max-w-xl mx-auto pt-4 pb-3 px-3 sm:px-4 flex flex-col items-center border-b border-slate-800/80">
       <div className="w-full flex items-center justify-between relative min-h-[44px]">
-        {/* Navegación Izquierda: Home, Instrucciones y Sugerir Canción */}
+        {/* Navegación Izquierda: Home, Instrucciones, Sugerir Canción e Instalar App */}
         <div className="flex items-center gap-0.5 sm:gap-1 z-10">
           {onGoHome && (
             <button

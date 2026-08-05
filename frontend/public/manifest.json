@@ -1,0 +1,19 @@
+{
+  "short_name": "Me Suena a...",
+  "name": "Me Suena a... | Juego Diario de Música en Español",
+  "description": "Adivina la canción del día en solo unos milisegundos. Desafíos diarios de Rock Nacional, Cumbia, Reggaeton, Pop y Trap.",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "type": "image/svg+xml",
+      "sizes": "512x512 192x192 128x128 64x64 32x32"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#060913",
+  "theme_color": "#060913",
+  "display": "standalone",
+  "orientation": "portrait",
+  "scope": "/",
+  "categories": ["games", "music", "entertainment"]
+}

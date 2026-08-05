@@ -2,18 +2,21 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Search, FastForward, CheckCircle, Music } from 'lucide-react';
 
 /**
- * Normalizador ultra-flexible: remueve tildes, signos de puntuación, comillas, guiones y múltiples espacios.
- * Convierte p.ej. "Música, Pa' la calle, Bizarrap: Bzrp..." a "musica pa la calle bizarrap bzrp"
+ * Normalizador ultra-flexible: remueve tildes, signos de puntuación, comillas y guiones.
+ * Si keepSpaces es false, también remueve espacios para emparejar "keper" -> "ke personajes" o "sodastereo" -> "soda stereo"
  */
-const normalizeText = (text) => {
+const cleanText = (text, keepSpaces = false) => {
   if (!text) return '';
-  return text
+  const cleaned = text
     .toLowerCase()
-    .normalize('NFD') // Separa caracteres accentuados en letra + diacrítico
-    .replace(/[\u0300-\u036f]/g, '') // Elimina tildes y diacríticos
-    .replace(/[^a-z0-9\s]/g, ' ') // Reemplaza signos de puntuación por espacios
-    .replace(/\s+/g, ' ') // Convierte espacios múltiples en 1 solo
-    .trim();
+    .normalize('NFD') // Separa letras de sus tildes
+    .replace(/[\u0300-\u036f]/g, '') // Elimina tildes
+    .replace(/[^a-z0-9\s]/g, ' '); // Elimina signos de puntuación
+
+  if (keepSpaces) {
+    return cleaned.replace(/\s+/g, ' ').trim();
+  }
+  return cleaned.replace(/\s+/g, '');
 };
 
 export const SongSearch = ({
@@ -28,20 +31,41 @@ export const SongSearch = ({
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
 
-  const normQuery = normalizeText(query);
+  const queryWithSpace = cleanText(query, true);
+  const queryNoSpace = cleanText(query, false);
 
-  // Filtrar canciones de forma súper flexible ignorando mayúsculas, tildes, comillas y múltiples espacios
-  const filteredSongs = normQuery === ''
+  // Búsqueda ultra-flexible (funciona con espacios, sin espacios, con tildes o sin tildes)
+  const filteredSongs = !query.trim()
     ? []
     : songList.filter(song => {
-      const normTitle = normalizeText(song.title);
-      const normArtist = normalizeText(song.artist);
-      const normCombined = `${normTitle} ${normArtist}`;
+        const titleWithSpace = cleanText(song.title, true);
+        const artistWithSpace = cleanText(song.artist, true);
+        const titleArtistWithSpace = `${titleWithSpace} ${artistWithSpace}`;
+        const artistTitleWithSpace = `${artistWithSpace} ${titleWithSpace}`;
 
-      return normTitle.includes(normQuery) ||
-        normArtist.includes(normQuery) ||
-        normCombined.includes(normQuery);
-    });
+        // 1. Coincidencia normal con espacios (Título, Artista, Título+Artista o Artista+Título)
+        if (
+          titleWithSpace.includes(queryWithSpace) ||
+          artistWithSpace.includes(queryWithSpace) ||
+          titleArtistWithSpace.includes(queryWithSpace) ||
+          artistTitleWithSpace.includes(queryWithSpace)
+        ) {
+          return true;
+        }
+
+        // 2. Coincidencia ultra-flexible sin espacios ("keper" -> "kepersonajes", "duki she don't" -> "she don't duki")
+        const titleNoSpace = cleanText(song.title, false);
+        const artistNoSpace = cleanText(song.artist, false);
+        const titleArtistNoSpace = `${titleNoSpace}${artistNoSpace}`;
+        const artistTitleNoSpace = `${artistNoSpace}${titleNoSpace}`;
+
+        return (
+          titleNoSpace.includes(queryNoSpace) ||
+          artistNoSpace.includes(queryNoSpace) ||
+          titleArtistNoSpace.includes(queryNoSpace) ||
+          artistTitleNoSpace.includes(queryNoSpace)
+        );
+      });
 
   // Cerrar dropdown al hacer clic afuera
   useEffect(() => {
@@ -61,20 +85,25 @@ export const SongSearch = ({
   };
 
   const handleGuessSubmit = (e) => {
-    e.preventDefault();
-    if (!selectedSong && normQuery !== '') {
-      // Búsqueda flexible sin tildes si el usuario presionó Enter escribiendo manualmente
+    if (e && e.preventDefault) e.preventDefault();
+    if (!selectedSong && queryNoSpace !== '') {
+      // Intentar encontrar coincidencia exacta manual si presionó Enter
       const match = songList.find(s => {
-        const normTitle = normalizeText(s.title);
-        const normArtist = normalizeText(s.artist);
-        const normCombined = `${normTitle} ${normArtist}`;
-        return normTitle === normQuery || normCombined === normQuery || `${normTitle} - ${normArtist}` === normQuery;
+        const titleNoSpace = cleanText(s.title, false);
+        const artistNoSpace = cleanText(s.artist, false);
+        const combinedNoSpace = `${titleNoSpace}${artistNoSpace}`;
+        return (
+          titleNoSpace === queryNoSpace || 
+          artistNoSpace === queryNoSpace || 
+          combinedNoSpace === queryNoSpace
+        );
       });
 
       if (match) {
         onGuess(match);
         setQuery('');
         setSelectedSong(null);
+        setIsOpen(false);
       }
       return;
     }
@@ -83,13 +112,8 @@ export const SongSearch = ({
       onGuess(selectedSong);
       setQuery('');
       setSelectedSong(null);
+      setIsOpen(false);
     }
-  };
-
-  const handleSkipSubmit = () => {
-    setQuery('');
-    setSelectedSong(null);
-    onSkip();
   };
 
   if (isGameOver) {
@@ -97,7 +121,7 @@ export const SongSearch = ({
   }
 
   return (
-    <div className="w-full max-w-xl mx-auto my-4 space-y-3 relative" ref={dropdownRef}>
+    <div className="w-full max-w-xl mx-auto mt-4 mb-10 space-y-3 relative" ref={dropdownRef}>
       {/* Autocomplete Input */}
       <form onSubmit={handleGuessSubmit} className="relative">
         <div className="relative flex items-center glass-input rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-emerald-500/50">
@@ -111,7 +135,7 @@ export const SongSearch = ({
               setIsOpen(true);
             }}
             onFocus={() => setIsOpen(true)}
-            placeholder="Busca por título o artista (ej: musica, pa la calle)..."
+            placeholder="Busca por título o artista (ej: keper, soda stereo, duki)..."
             className="w-full py-3.5 px-3 bg-transparent text-slate-100 placeholder-slate-500 text-sm focus:outline-none"
           />
           {query && (
@@ -128,9 +152,9 @@ export const SongSearch = ({
           )}
         </div>
 
-        {/* Dropdown Options */}
+        {/* Dropdown de Opciones (Limitado a 3 canciones para evitar tapar el borde inferior) */}
         {isOpen && filteredSongs.length > 0 && (
-          <ul className="absolute z-30 w-full mt-2 bg-[#121824] border border-slate-700/80 rounded-xl shadow-2xl overflow-hidden max-h-60 overflow-y-auto divide-y divide-slate-800">
+          <ul className="absolute z-40 w-full mt-2 bg-[#121824] border border-slate-700/80 rounded-xl shadow-2xl overflow-hidden max-h-[175px] overflow-y-auto divide-y divide-slate-800">
             {filteredSongs.map((song) => (
               <li
                 key={song.id}

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { HelpCircle, ChevronDown, Music, Calendar, Zap, ShieldCheck, Flame, Lightbulb, Youtube, Send } from 'lucide-react';
+import { HelpCircle, ChevronDown, Music, Calendar, Zap, ShieldCheck, Flame, Lightbulb, Youtube, Send, Smartphone } from 'lucide-react';
 
 export const FAQ = ({ onOpenSuggest }) => {
   const [openIndex, setOpenIndex] = useState(null);
@@ -9,6 +9,11 @@ export const FAQ = ({ onOpenSuggest }) => {
       icon: Music,
       question: "¿Cómo se juega a Me Suena a...?",
       answer: "Elige tu categoría preferida (Mix General, Rock Nacional, Cumbia, Reggaeton Old/New School, Pop Latino o Trap). Tienes 7 intentos para adivinar la canción del día escuchando fragmentos progresivos que van desde 0.5s, 1s, 2s, 3s, 5s, 10s hasta 15 segundos."
+    },
+    {
+      icon: Smartphone,
+      question: "¿Puedo descargar o instalar Me Suena a... como App en mi celular?",
+      answer: "¡Sí! Podés instalar la Web App / PWA directamente en tu teléfono Android o iPhone desde el botón 📲 de la pantalla. Se agrega a tu pantalla de inicio como una aplicación nativa sin ocupar memoria. Momentáneamente está disponible como Web App / APK directo mientras trabajamos para publicar la App oficial en Google Play Store."
     },
     {
       icon: Calendar,

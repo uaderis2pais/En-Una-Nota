@@ -10,8 +10,22 @@
     <meta name="keywords" content="me suena a, adivina la cancion, juego de musica en espanol, juego diario de musica, trivia musical, rock nacional, cumbia argentina, reggaeton old school, trap en espanol, heardle espanol, juego adivinar cancion" />
     <meta name="robots" content="index, follow, max-image-preview:large" />
     <meta name="author" content="Me Suena a..." />
-    <meta name="theme-color" content="#060913" />
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Me Suena a..." />
     <link rel="canonical" href="https://me-suena-a.vercel.app/" />
+
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js').catch((err) => {
+            console.log('SW registration failed: ', err);
+          });
+        });
+      }
+    </script>
 
     <!-- Open Graph / Meta etiquetas para WhatsApp, LinkedIn, Facebook y Telegram -->
     <meta property="og:type" content="website" />
