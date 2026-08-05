@@ -16,10 +16,10 @@ const normalizeText = (text) => {
     .trim();
 };
 
-export const SongSearch = ({ 
-  songList, 
-  onGuess, 
-  onSkip, 
+export const SongSearch = ({
+  songList,
+  onGuess,
+  onSkip,
   isGameOver,
   currentAttemptTime
 }) => {
@@ -31,17 +31,17 @@ export const SongSearch = ({
   const normQuery = normalizeText(query);
 
   // Filtrar canciones de forma súper flexible ignorando mayúsculas, tildes, comillas y múltiples espacios
-  const filteredSongs = normQuery === '' 
-    ? [] 
+  const filteredSongs = normQuery === ''
+    ? []
     : songList.filter(song => {
-        const normTitle = normalizeText(song.title);
-        const normArtist = normalizeText(song.artist);
-        const normCombined = `${normTitle} ${normArtist}`;
+      const normTitle = normalizeText(song.title);
+      const normArtist = normalizeText(song.artist);
+      const normCombined = `${normTitle} ${normArtist}`;
 
-        return normTitle.includes(normQuery) || 
-               normArtist.includes(normQuery) || 
-               normCombined.includes(normQuery);
-      });
+      return normTitle.includes(normQuery) ||
+        normArtist.includes(normQuery) ||
+        normCombined.includes(normQuery);
+    });
 
   // Cerrar dropdown al hacer clic afuera
   useEffect(() => {
@@ -150,31 +150,20 @@ export const SongSearch = ({
         )}
       </form>
 
-      {/* Action Buttons: Saltar vs Adivinar */}
-      <div className="flex items-center gap-3">
-        <button
-          type="button"
-          onClick={handleSkipSubmit}
-          className="flex-1 py-3 px-4 rounded-xl border border-slate-700 bg-slate-800/80 hover:bg-slate-700 text-slate-200 font-semibold text-sm flex items-center justify-center gap-2 transition-all active:scale-98"
-        >
-          <FastForward className="w-4 h-4 text-amber-400" />
-          <span>Saltar (+{currentAttemptTime}s)</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={handleGuessSubmit}
-          disabled={!selectedSong && !query.trim()}
-          className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-lg active:scale-98 ${
-            selectedSong || query.trim()
-              ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-slate-950 hover:brightness-110 shadow-emerald-500/20'
-              : 'bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-800'
-          }`}
-        >
-          <CheckCircle className="w-4 h-4" />
-          <span>Adivinar</span>
-        </button>
-      </div>
+      {/* Botón Principal: Adivinar (Opaco y Sólido) */}
+      <button
+        type="button"
+        onClick={handleGuessSubmit}
+        disabled={!selectedSong && !query.trim()}
+        className={`w-full py-3.5 px-4 rounded-xl font-black text-sm sm:text-base flex items-center justify-center gap-2 transition-all shadow-xl active:scale-98 border ${
+          selectedSong || query.trim()
+            ? 'bg-gradient-to-r from-emerald-500 via-teal-400 to-cyan-400 text-slate-950 border-emerald-400/80 hover:brightness-110 shadow-emerald-500/30'
+            : 'bg-slate-900/95 text-slate-500 border-slate-800 cursor-not-allowed'
+        }`}
+      >
+        <CheckCircle className="w-5 h-5" />
+        <span>Adivinar</span>
+      </button>
     </div>
   );
 };

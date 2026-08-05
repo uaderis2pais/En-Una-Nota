@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Play, Pause, Volume2, Volume1, VolumeX, AlertCircle, Calendar, Youtube, Lightbulb } from 'lucide-react';
+import { Play, Pause, Volume2, Volume1, VolumeX, AlertCircle, Calendar, Youtube, Lightbulb, Disc3, Music } from 'lucide-react';
 
 export const AudioPlayer = ({ 
   audioUrl, 
@@ -314,25 +314,61 @@ export const AudioPlayer = ({
         </div>
       )}
 
-      {/* Botón Principal Play / Pause */}
-      <div className="flex justify-center pt-1">
+      {/* DISCO DE VINILO INTERACTIVO (BOTÓN PLAY/PAUSE PRINCIPAL) */}
+      <div className="flex flex-col items-center justify-center pt-2 relative">
+        {/* Glow de fondo para el vinilo */}
+        <div className={`absolute w-44 h-44 rounded-full bg-emerald-500/25 blur-3xl transition-all duration-700 pointer-events-none ${isPlaying ? 'opacity-100 scale-110' : 'opacity-20 scale-90'}`} />
+
+        {/* El Vinilo Completo es el Botón Clicable */}
         <button
+          type="button"
           onClick={togglePlayPause}
           disabled={hasError}
-          className={`w-15 h-15 sm:w-16 sm:h-16 rounded-full flex items-center justify-center transition-all duration-200 transform active:scale-95 shadow-xl ${
-            hasError
-              ? 'bg-slate-800 text-slate-600 border border-slate-700 cursor-not-allowed'
-              : isPlaying 
-                ? 'bg-slate-800 text-emerald-400 border-2 border-emerald-500 shadow-emerald-500/20' 
-                : 'bg-gradient-to-tr from-emerald-500 to-cyan-500 text-slate-950 hover:brightness-110 shadow-emerald-500/30 hover:scale-105'
+          className={`relative group flex items-center justify-center my-3 cursor-pointer outline-none transition-transform duration-300 active:scale-95 ${
+            hasError ? 'cursor-not-allowed opacity-50' : 'hover:scale-105'
           }`}
+          title={isPlaying ? "Pausar fragmento de audio" : "Reproducir fragmento de audio"}
           aria-label={isPlaying ? "Pausar audio" : "Reproducir audio"}
         >
-          {isPlaying ? (
-            <Pause className="w-8 h-8 fill-current stroke-none" />
-          ) : (
-            <Play className="w-8 h-8 fill-current stroke-none ml-1" />
-          )}
+          {/* Disco de Vinilo (Giratorio en Play) */}
+          <div className={`w-36 h-36 sm:w-44 sm:h-44 rounded-full vinyl-disc flex items-center justify-center border-4 shadow-2xl transition-all duration-700 relative ${
+            isPlaying 
+              ? 'animate-spin-vinyl border-emerald-400 shadow-emerald-500/40 ring-4 ring-emerald-500/20' 
+              : 'border-slate-700 shadow-slate-950/80 group-hover:border-emerald-500/60'
+          }`}>
+            {/* Etiqueta Central de Vinilo */}
+            <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-gradient-to-tr from-emerald-500 via-teal-500 to-cyan-500 p-0.5 shadow-lg flex items-center justify-center relative overflow-hidden">
+              {targetSong?.coverUrl ? (
+                <img src={targetSong.coverUrl} alt="Cover" className="w-full h-full object-cover rounded-full opacity-90" />
+              ) : (
+                <Disc3 className="w-8 h-8 text-slate-950 stroke-[2.5]" />
+              )}
+
+              {/* Overlay de Icono Play/Pause en el centro del Vinilo */}
+              <div className="absolute inset-0 bg-slate-950/60 backdrop-blur-[2px] flex items-center justify-center transition-all group-hover:bg-slate-950/40">
+                {isPlaying ? (
+                  <Pause className="w-6 h-6 sm:w-7 sm:h-7 text-emerald-400 fill-emerald-400 animate-pulse" />
+                ) : (
+                  <Play className="w-6 h-6 sm:w-7 sm:h-7 text-white fill-white ml-0.5 group-hover:scale-110 transition-transform" />
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Badge interactivo bajo el vinilo */}
+          <div className="absolute -bottom-2 px-3 py-1 rounded-full bg-slate-900/95 border border-slate-700 text-slate-200 font-extrabold text-[10px] uppercase tracking-wider flex items-center gap-1.5 shadow-xl group-hover:border-emerald-500/60 group-hover:text-emerald-400 transition-all">
+            {isPlaying ? (
+              <>
+                <Pause className="w-3 h-3 text-emerald-400 fill-emerald-400" />
+                <span>Pausar</span>
+              </>
+            ) : (
+              <>
+                <Play className="w-3 h-3 text-emerald-400 fill-emerald-400" />
+                <span>Escuchar Fragmento</span>
+              </>
+            )}
+          </div>
         </button>
       </div>
     </div>

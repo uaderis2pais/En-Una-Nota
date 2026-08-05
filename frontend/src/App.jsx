@@ -7,8 +7,9 @@ import { SongSearch } from './components/SongSearch';
 import { GameResultModal } from './components/GameResultModal';
 import { HomeView, CATEGORIES } from './components/HomeView';
 import { SuggestSongModal } from './components/SuggestSongModal';
+import { MusicalBackground } from './components/MusicalBackground';
 import AdminView from './views/AdminView';
-import { AlertCircle, RefreshCw, Lightbulb, Zap } from 'lucide-react';
+import { AlertCircle, RefreshCw, Lightbulb, Zap, FastForward } from 'lucide-react';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
 
@@ -323,7 +324,8 @@ export function App() {
   // RENDER PANTALLA PRINCIPAL (HOME)
   if (currentView === 'HOME') {
     return (
-      <div className="min-h-screen bg-[#0a0d14] text-slate-100 flex flex-col justify-between">
+      <div className="min-h-screen bg-[#060913] mesh-bg text-slate-100 flex flex-col justify-between relative overflow-hidden">
+        <MusicalBackground />
         <HomeView 
           onSelectCategory={handleSelectCategory} 
           onOpenSuggest={handleOpenSuggest}
@@ -429,8 +431,9 @@ export function App() {
 
   // RENDER PANTALLA DE JUEGO (GAME VIEW)
   return (
-    <div className="min-h-screen bg-[#0a0d14] text-slate-100 flex flex-col justify-between px-4 pb-8">
-      <div className="w-full max-w-2xl mx-auto flex-1 flex flex-col">
+    <div className="min-h-screen bg-[#060913] mesh-bg text-slate-100 flex flex-col justify-between px-4 pb-8 relative overflow-hidden">
+      <MusicalBackground />
+      <div className="w-full max-w-2xl mx-auto flex-1 flex flex-col z-10">
         <Header 
           onGoHome={() => setCurrentView('HOME')}
           categoryName={categoryDisplayName}
@@ -447,6 +450,20 @@ export function App() {
           attemptTimes={ATTEMPT_TIMES}
           targetSong={targetSong}
         />
+
+        {/* BOTÓN DE SALTEAR INTENTO - MÁS OPACO Y SÓLIDO */}
+        {!isGameOver && (
+          <div className="w-full max-w-xl mx-auto my-2.5 relative z-20">
+            <button
+              type="button"
+              onClick={handleSkip}
+              className="w-full py-3.5 px-4 rounded-xl border-2 border-amber-500/40 bg-slate-900/95 hover:bg-slate-900 text-amber-300 font-black text-xs sm:text-sm flex items-center justify-center gap-2 transition-all shadow-xl shadow-amber-500/10 active:scale-98 group"
+            >
+              <FastForward className="w-4 h-4 text-amber-400 group-hover:translate-x-0.5 transition-transform" />
+              <span>Saltear Intento (+{ATTEMPT_TIMES[currentAttemptIndex]}s)</span>
+            </button>
+          </div>
+        )}
 
         <AttemptList 
           attempts={attempts}

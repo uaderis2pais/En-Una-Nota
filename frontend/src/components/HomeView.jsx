@@ -35,7 +35,9 @@ export const GENRE_CATEGORIES = [
     desc: 'Soda Stereo, Charly, Spinetta, Los Redondos, Calamaro, Fito y clásicos eternos.',
     icon: Guitar,
     color: 'from-rose-500 to-amber-600',
-    borderColor: 'border-rose-500/30',
+    borderColor: 'border-rose-500/40',
+    glowColor: 'from-rose-500/40 to-amber-500/30',
+    hoverGlow: 'hover:shadow-rose-500/30 hover:border-rose-400',
     badge: 'Clásicos'
   },
   {
@@ -44,7 +46,9 @@ export const GENRE_CATEGORIES = [
     desc: 'Villera, Turra y Cheta/Pop: Damas Gratis, Ke Personajes, Marama y Rombai.',
     icon: Disc3,
     color: 'from-amber-500 to-yellow-600',
-    borderColor: 'border-amber-500/30',
+    borderColor: 'border-amber-500/40',
+    glowColor: 'from-amber-500/40 to-yellow-500/30',
+    hoverGlow: 'hover:shadow-amber-500/30 hover:border-amber-400',
     badge: 'Fiesta'
   },
   {
@@ -53,7 +57,9 @@ export const GENRE_CATEGORIES = [
     desc: 'Los perreos e himnos clásicos: Daddy Yankee, Don Omar, Wisin & Yandel, Plan B.',
     icon: Flame,
     color: 'from-purple-500 to-pink-600',
-    borderColor: 'border-purple-500/30',
+    borderColor: 'border-purple-500/40',
+    glowColor: 'from-purple-500/40 to-pink-500/30',
+    hoverGlow: 'hover:shadow-purple-500/30 hover:border-purple-400',
     badge: 'Old School'
   },
   {
@@ -62,7 +68,9 @@ export const GENRE_CATEGORIES = [
     desc: 'La nueva era: Bad Bunny, Feid, Rauw, Mora y hits globales como Gata Only.',
     icon: Sparkles,
     color: 'from-fuchsia-500 to-rose-600',
-    borderColor: 'border-fuchsia-500/30',
+    borderColor: 'border-fuchsia-500/40',
+    glowColor: 'from-fuchsia-500/40 to-rose-500/30',
+    hoverGlow: 'hover:shadow-fuchsia-500/30 hover:border-fuchsia-400',
     badge: 'Éxitos Actuales'
   },
   {
@@ -71,7 +79,9 @@ export const GENRE_CATEGORIES = [
     desc: 'Grandes éxitos en español: Shakira, Luis Miguel, Ricky Martin, Chayanne y Pop actual.',
     icon: Mic2,
     color: 'from-cyan-500 to-blue-600',
-    borderColor: 'border-cyan-500/30',
+    borderColor: 'border-cyan-500/40',
+    glowColor: 'from-cyan-500/40 to-blue-500/30',
+    hoverGlow: 'hover:shadow-cyan-500/30 hover:border-cyan-400',
     badge: 'Hitazos'
   },
   {
@@ -80,7 +90,9 @@ export const GENRE_CATEGORIES = [
     desc: 'Duki, YSY A, Neo Pistea, Travis, C. Tangana, Khea, Cazzu y la ola urbana.',
     icon: Music,
     color: 'from-violet-500 to-indigo-600',
-    borderColor: 'border-violet-500/30',
+    borderColor: 'border-violet-500/40',
+    glowColor: 'from-violet-500/40 to-indigo-500/30',
+    hoverGlow: 'hover:shadow-violet-500/30 hover:border-violet-400',
     badge: 'Urbano'
   }
 ];
@@ -153,7 +165,7 @@ export function HomeView({ onSelectCategory, onOpenSuggest, totalSongsCount }) {
   const generalStatus = getCategoryCompletedStatus('general');
 
   return (
-    <div className="w-full max-w-5xl mx-auto px-3 sm:px-4 py-4 sm:py-8 flex flex-col items-center">
+    <div className="w-full max-w-5xl mx-auto px-3 sm:px-4 py-4 sm:py-8 flex flex-col items-center relative z-20">
       {/* Hero Header Adaptado a Mobile */}
       <div className="text-center space-y-2 sm:space-y-3 mb-5 sm:mb-8">
         <div className="inline-flex flex-wrap items-center justify-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] sm:text-xs font-bold uppercase tracking-wider">
@@ -258,8 +270,11 @@ export function HomeView({ onSelectCategory, onOpenSuggest, totalSongsCount }) {
               <div
                 key={cat.id}
                 onClick={() => onSelectCategory(cat.id)}
-                className={`glass-panel p-3.5 sm:p-6 rounded-xl sm:rounded-2xl border ${cat.borderColor} hover:border-emerald-400 transition-all duration-300 transform hover:-translate-y-1 hover:shadow-xl cursor-pointer flex flex-col justify-between group relative overflow-hidden`}
+                className={`glass-panel-elevated p-3.5 sm:p-6 rounded-xl sm:rounded-2xl border ${cat.borderColor} ${cat.hoverGlow} transition-all duration-300 transform hover:-translate-y-1.5 hover:shadow-2xl cursor-pointer flex flex-col justify-between group relative overflow-hidden`}
               >
+                {/* Glow Neón de Fondo por Género */}
+                <div className={`absolute -top-16 -right-16 w-40 h-40 rounded-full bg-gradient-to-br ${cat.glowColor} blur-2xl group-hover:opacity-100 opacity-60 group-hover:scale-125 transition-all duration-500 pointer-events-none`} />
+
                 <div className="space-y-2 sm:space-y-3 relative z-10">
                   <div className="flex items-center justify-between gap-1">
                     <div className={`p-2 sm:p-3 rounded-xl bg-gradient-to-br ${cat.color} text-white shadow-md group-hover:scale-110 transition-transform duration-300 shrink-0`}>
