@@ -9,9 +9,10 @@ import { HomeView, CATEGORIES } from './components/HomeView';
 import { SuggestSongModal } from './components/SuggestSongModal';
 import { InstallPwaModal } from './components/InstallPwaModal';
 import { VideoAdModal } from './components/VideoAdModal';
+import { PrivacyModal } from './components/PrivacyModal';
 import { MusicalBackground } from './components/MusicalBackground';
 import AdminView from './views/AdminView';
-import { AlertCircle, RefreshCw, Lightbulb, Zap, FastForward, Smartphone } from 'lucide-react';
+import { AlertCircle, RefreshCw, Lightbulb, Zap, FastForward, Smartphone, ShieldCheck } from 'lucide-react';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
 
@@ -29,11 +30,12 @@ export function App() {
   const [currentView, setCurrentView] = useState('HOME');
   const [selectedCategory, setSelectedCategory] = useState('general');
 
-  // Estado para Modales (Sugerencias, PWA y Video Ad)
+  // Estado para Modales (Sugerencias, PWA, Video Ad y Privacidad)
   const [isSuggestModalOpen, setIsSuggestModalOpen] = useState(false);
   const [suggestInitialGenre, setSuggestInitialGenre] = useState('rock');
   const [isPwaModalOpen, setIsPwaModalOpen] = useState(false);
   const [isVideoAdOpen, setIsVideoAdOpen] = useState(false);
+  const [isPrivacyModalOpen, setIsPrivacyModalOpen] = useState(false);
 
   const handleOpenSuggest = (genreId) => {
     if (genreId) setSuggestInitialGenre(genreId);
@@ -374,6 +376,11 @@ export function App() {
           onClose={() => setIsPwaModalOpen(false)} 
         />
         
+        <PrivacyModal 
+          isOpen={isPrivacyModalOpen} 
+          onClose={() => setIsPrivacyModalOpen(false)} 
+        />
+        
         <footer className="text-center text-[11px] text-slate-600 pb-6 flex flex-wrap items-center justify-center gap-3">
           <span>Me Suena a... © 2026</span>
           <span>•</span>
@@ -400,6 +407,14 @@ export function App() {
           >
             <Smartphone className="w-3 h-3 text-cyan-400" />
             <span>📲 Descargar App Celular</span>
+          </button>
+          <span>•</span>
+          <button 
+            onClick={() => setIsPrivacyModalOpen(true)}
+            className="text-slate-400 hover:text-slate-200 font-bold flex items-center gap-1"
+          >
+            <ShieldCheck className="w-3 h-3 text-emerald-400" />
+            <span>Privacidad y Términos</span>
           </button>
           <span>•</span>
           <a 
