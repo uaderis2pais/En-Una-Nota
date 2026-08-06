@@ -8,6 +8,7 @@ import { GameResultModal } from './components/GameResultModal';
 import { HomeView, CATEGORIES } from './components/HomeView';
 import { SuggestSongModal } from './components/SuggestSongModal';
 import { InstallPwaModal } from './components/InstallPwaModal';
+import { VideoAdModal } from './components/VideoAdModal';
 import { MusicalBackground } from './components/MusicalBackground';
 import AdminView from './views/AdminView';
 import { AlertCircle, RefreshCw, Lightbulb, Zap, FastForward, Smartphone } from 'lucide-react';
@@ -28,10 +29,11 @@ export function App() {
   const [currentView, setCurrentView] = useState('HOME');
   const [selectedCategory, setSelectedCategory] = useState('general');
 
-  // Estado para Modal de Sugerencias de Canciones de Usuario y PWA
+  // Estado para Modales (Sugerencias, PWA y Video Ad)
   const [isSuggestModalOpen, setIsSuggestModalOpen] = useState(false);
   const [suggestInitialGenre, setSuggestInitialGenre] = useState('rock');
   const [isPwaModalOpen, setIsPwaModalOpen] = useState(false);
+  const [isVideoAdOpen, setIsVideoAdOpen] = useState(false);
 
   const handleOpenSuggest = (genreId) => {
     if (genreId) setSuggestInitialGenre(genreId);
@@ -256,13 +258,42 @@ export function App() {
     ? 30 
     : ATTEMPT_TIMES[currentAttemptIndex] || 15;
 
-  const handleGuess = (selectedSong) => {
+  const triggerFirstDailyVideoAd = () => {
+    try {
+      const todayStr = getLocalDateString();
+      const lastAdDate = localStorage.getItem('en_una_nota_first_daily_video_ad_date');
+      if (lastAdDate !== todayStr) {
+        setIsVideoAdOpen(true);
+      }
+    } catch (e) {
+      console.error("Error comprobando fecha de video ad:", e);
+    }
+  };
+
+  const handleCloseVideoAd = () => {
+    try {
+      localStorage.setItem('en_una_nota_first_daily_video_ad_date', getLocalDateString());
+    } catch (e) {
+      console.error(e);
+    }
+    setIsVideoAdOpen(false);
+  };
+
+  /**
+   * Manejador al enviar una adivinanza
+   */
+  const handleGuess = (songGuessed) => {
     if (isGameOver || !targetSong) return;
 
-    const isCorrect = String(selectedSong.id) === String(targetSong.id) || 
-      selectedSong.title.toLowerCase() === targetSong.title.toLowerCase();
+    const normTargetTitle = targetSong.title.trim().toLowerCase();
+    const normTargetArtist = targetSong.artist.trim().toLowerCase();
+    const normGuessTitle = songGuessed.title.trim().toLowerCase();
+    const normGuessArtist = songGuessed.artist.trim().toLowerCase();
 
-    const guessLabel = `${selectedSong.title} - ${selectedSong.artist}`;
+    const isCorrect = (normTargetTitle === normGuessTitle && normTargetArtist === normGuessArtist) || 
+                      (songGuessed.id && songGuessed.id === targetSong.id);
+
+    const guessLabel = `${songGuessed.title} - ${songGuessed.artist}`;
 
     const newAttempts = [...attempts];
     newAttempts[currentAttemptIndex] = {
@@ -274,12 +305,14 @@ export function App() {
     if (isCorrect) {
       setGameStatus('WON');
       updateStreaksOnGameEnd(selectedCategory, true);
+      triggerFirstDailyVideoAd();
     } else {
       if (currentAttemptIndex < TOTAL_ATTEMPTS - 1) {
         setCurrentAttemptIndex((prev) => prev + 1);
       } else {
         setGameStatus('LOST');
         updateStreaksOnGameEnd(selectedCategory, false);
+        triggerFirstDailyVideoAd();
       }
     }
   };
@@ -299,6 +332,7 @@ export function App() {
     } else {
       setGameStatus('LOST');
       updateStreaksOnGameEnd(selectedCategory, false);
+      triggerFirstDailyVideoAd();
     }
   };
 
@@ -507,6 +541,11 @@ export function App() {
           targetSong={targetSong}
           attemptsCount={currentAttemptIndex + 1}
           onGoHome={() => setCurrentView('HOME')}
+        />
+
+        <VideoAdModal 
+          isOpen={isVideoAdOpen} 
+          onClose={handleCloseVideoAd} 
         />
       </div>
 

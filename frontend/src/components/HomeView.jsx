@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { FAQ } from './FAQ';
 import { DeveloperCard } from './DeveloperCard';
+import { AdBanner } from './AdBanner';
 
 export const FEATURED_CATEGORY = {
   id: 'general',
@@ -361,6 +362,11 @@ export function HomeView({ onSelectCategory, onOpenSuggest, onOpenPwa, totalSong
           )}
         </div>
       )}
+
+      {/* ANUNCIO UBI 3: Banner Horizontal Destacado Arriba del FAQ */}
+      <div className="w-full max-w-4xl mx-auto my-6">
+        <AdBanner format="horizontal" isDemo={true} />
+      </div>
 
       {/* SECCIÓN FAQ */}
       <FAQ onOpenSuggest={onOpenSuggest} />

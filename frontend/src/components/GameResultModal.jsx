@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Trophy, Frown, Sparkles, Music, LayoutGrid, Clock, Youtube } from 'lucide-react';
+import { AdBanner } from './AdBanner';
 
 /**
  * Contador descendiente hasta medianoche (00:00:00)
@@ -109,8 +110,14 @@ export const GameResultModal = ({
           <span>¡Audio de 30s desbloqueado! Puedes usar el reproductor arriba para escuchar más.</span>
         </div>
 
+        {/* ANUNCIO UBI 1: Video Ad Patrocinado al finalizar la partida */}
+        <AdBanner format="video" isDemo={true} />
+
         {/* Contador regresivo a medianoche */}
         <MidnightCountdown />
+
+        {/* ANUNCIO UBI 2: Banner Display en Modal de Resultado */}
+        <AdBanner format="rectangle" isDemo={true} />
 
         {/* Acciones principales: Escuchar en YouTube + Probar otra categoría */}
         <div className="flex flex-col sm:flex-row items-center gap-3 pt-2">
