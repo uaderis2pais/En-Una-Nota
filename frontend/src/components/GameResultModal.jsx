@@ -125,14 +125,14 @@ export const GameResultModal = ({
               <Sparkles className="w-4 h-4 fill-current" />
             </div>
             <div>
-              <div className="text-[10px] font-black text-cyan-300 uppercase tracking-wider">Beneficio Patrocinado</div>
+              <div className="text-[10px] font-black text-cyan-300 uppercase tracking-wider">Publicidad de Servidores</div>
               <div className="text-xs font-extrabold text-white group-hover:text-cyan-300">
-                Ver Oferta Especial del Día ➔
+                ¡Apoyá al juego haciendo un clic aquí! ➔
               </div>
             </div>
           </div>
           <span className="text-[11px] font-bold text-cyan-400 bg-cyan-500/10 px-2.5 py-1 rounded-lg border border-cyan-500/20 group-hover:bg-cyan-500/20">
-            Explorar
+            Apoyar ➔
           </span>
         </a>
 

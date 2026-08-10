@@ -66,10 +66,10 @@ export const VideoAdModal = ({ isOpen, onClose }) => {
               <Play className="w-7 h-7 fill-current ml-0.5" />
             </div>
             <h3 className="font-black text-white text-base sm:text-lg flex items-center gap-1.5 justify-center">
-              <span>Oferta Patrocinada Exclusiva</span>
+              <span>Publicidad Patrocinada de Servidores</span>
             </h3>
             <p className="text-xs text-cyan-300 max-w-xs mt-1 font-medium">
-              ¡Haz clic aquí para ver el sponsor oficial del día de Me Suena a...!
+              ¡Hacé un clic aquí para apoyar los servidores gratuitos del juego!
             </p>
           </div>
 

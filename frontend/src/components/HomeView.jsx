@@ -377,18 +377,18 @@ export function HomeView({ onSelectCategory, onOpenSuggest, onOpenPwa, totalSong
             </div>
             <div>
               <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-cyan-500/20 text-cyan-300 text-[10px] font-black uppercase tracking-wider mb-1">
-                <span>Sponsor Oficial</span>
+                <span>Publicidad Patrocinada</span>
               </div>
               <h4 className="text-xs sm:text-sm font-extrabold text-white group-hover:text-cyan-300 transition-colors">
-                Descubre Promociones y Ofertas Exclusivas del Día
+                ¡Apoyá a Me Suena a... con un Clic!
               </h4>
               <p className="text-[11px] text-slate-400">
-                Apoya a Me Suena a... haciendo clic para explorar las tendencias recomendadas.
+                Tu clic en este anuncio ayuda a mantener los servidores gratuitos y las canciones actualizadas diariamente.
               </p>
             </div>
           </div>
           <span className="px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-500 to-emerald-400 text-slate-950 font-black text-xs shadow-md group-hover:brightness-110 transition-all shrink-0">
-            Ver Oferta ➔
+            Apoyar con Clic ➔
           </span>
         </a>
       </div>
