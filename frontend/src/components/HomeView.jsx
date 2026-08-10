@@ -363,9 +363,34 @@ export function HomeView({ onSelectCategory, onOpenSuggest, onOpenPwa, totalSong
         </div>
       )}
 
-      {/* ANUNCIO UBI 3: Banner Horizontal Destacado Arriba del FAQ */}
-      <div className="w-full max-w-4xl mx-auto my-6">
-        <AdBanner format="horizontal" isDemo={true} />
+      {/* BANNER PATROCINADO DIRECT LINK MONETAG */}
+      <div className="w-full max-w-4xl mx-auto my-6 px-4">
+        <a 
+          href="https://omg10.com/4/11548097"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="glass-panel p-4 rounded-2xl border border-cyan-500/40 bg-slate-900/90 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-xl hover:border-cyan-400 transition-all group block"
+        >
+          <div className="flex items-center gap-3 text-center sm:text-left">
+            <div className="p-3 rounded-xl bg-gradient-to-tr from-cyan-500 to-emerald-400 text-slate-950 font-black shadow-md group-hover:scale-110 transition-transform">
+              <Sparkles className="w-5 h-5 fill-current" />
+            </div>
+            <div>
+              <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-cyan-500/20 text-cyan-300 text-[10px] font-black uppercase tracking-wider mb-1">
+                <span>Sponsor Oficial</span>
+              </div>
+              <h4 className="text-xs sm:text-sm font-extrabold text-white group-hover:text-cyan-300 transition-colors">
+                Descubre Promociones y Ofertas Exclusivas del Día
+              </h4>
+              <p className="text-[11px] text-slate-400">
+                Apoya a Me Suena a... haciendo clic para explorar las tendencias recomendadas.
+              </p>
+            </div>
+          </div>
+          <span className="px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-500 to-emerald-400 text-slate-950 font-black text-xs shadow-md group-hover:brightness-110 transition-all shrink-0">
+            Ver Oferta ➔
+          </span>
+        </a>
       </div>
 
       {/* SECCIÓN FAQ */}

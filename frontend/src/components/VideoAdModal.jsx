@@ -53,18 +53,23 @@ export const VideoAdModal = ({ isOpen, onClose }) => {
           </div>
         </div>
 
-        {/* Reproductor de Video Publicitario Demostración */}
-        <div className="relative w-full aspect-video rounded-2xl bg-slate-950 border border-slate-800 overflow-hidden flex flex-col items-center justify-center group shadow-inner">
-          {/* Fondo simulado de video publicitario */}
-          <div className="absolute inset-0 bg-gradient-to-tr from-cyan-950 via-slate-900 to-emerald-950 opacity-90 flex flex-col items-center justify-center p-4 text-center">
+        {/* Reproductor de Video Publicitario con Direct Link Monetag */}
+        <a 
+          href="https://omg10.com/4/11548097" 
+          target="_blank" 
+          rel="noopener noreferrer"
+          className="relative w-full aspect-video rounded-2xl bg-slate-950 border border-cyan-500/50 overflow-hidden flex flex-col items-center justify-center group shadow-inner cursor-pointer hover:border-cyan-400 transition-all block"
+        >
+          {/* Fondo animado de anuncio con Direct Link */}
+          <div className="absolute inset-0 bg-gradient-to-tr from-cyan-950 via-slate-900 to-emerald-950 opacity-90 flex flex-col items-center justify-center p-4 text-center group-hover:scale-105 transition-transform">
             <div className="w-14 h-14 rounded-full bg-gradient-to-tr from-cyan-500 to-emerald-400 text-slate-950 flex items-center justify-center shadow-lg shadow-cyan-500/30 mb-2 animate-bounce">
               <Play className="w-7 h-7 fill-current ml-0.5" />
             </div>
-            <h3 className="font-black text-white text-base sm:text-lg">
-              Spotify Free & Passline Recitales
+            <h3 className="font-black text-white text-base sm:text-lg flex items-center gap-1.5 justify-center">
+              <span>Oferta Patrocinada Exclusiva</span>
             </h3>
-            <p className="text-xs text-slate-300 max-w-xs mt-1">
-              Escuchá tus canciones favoritas y conseguí entradas para tus artistas preferidos de Argentina.
+            <p className="text-xs text-cyan-300 max-w-xs mt-1 font-medium">
+              ¡Haz clic aquí para ver el sponsor oficial del día de Me Suena a...!
             </p>
           </div>
 
@@ -75,11 +80,11 @@ export const VideoAdModal = ({ isOpen, onClose }) => {
               style={{ width: `${((5 - countdown) / 5) * 100}%` }}
             />
           </div>
-        </div>
+        </a>
 
         {/* Mensaje aclaratorio */}
         <p className="text-[11px] text-slate-400 leading-relaxed">
-          Gracias por jugar a <strong>Me Suena a...</strong>. Este breve anuncio ayuda a mantener los servidores gratuitos y cargados diariamente.
+          Gracias por jugar a <strong>Me Suena a...</strong>. Este anuncio ayuda a mantener los servidores gratuitos y cargados diariamente.
         </p>
 
         {/* Botón de Cierre / Continuar al Juego */}

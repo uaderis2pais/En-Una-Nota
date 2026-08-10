@@ -110,14 +110,31 @@ export const GameResultModal = ({
           <span>¡Audio de 30s desbloqueado! Puedes usar el reproductor arriba para escuchar más.</span>
         </div>
 
-        {/* ANUNCIO UBI 1: Video Ad Patrocinado al finalizar la partida */}
-        <AdBanner format="video" isDemo={true} />
-
         {/* Contador regresivo a medianoche */}
         <MidnightCountdown />
 
-        {/* ANUNCIO UBI 2: Banner Display en Modal de Resultado */}
-        <AdBanner format="rectangle" isDemo={true} />
+        {/* BANNER SPONSOR CON DIRECT LINK DE MONETAG */}
+        <a 
+          href="https://omg10.com/4/11548097"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="p-3 bg-gradient-to-r from-cyan-950/80 to-slate-900/90 rounded-xl border border-cyan-500/40 hover:border-cyan-400 flex items-center justify-between gap-3 text-left transition-all group block shadow-md"
+        >
+          <div className="flex items-center gap-2.5">
+            <div className="p-2 rounded-lg bg-cyan-500/20 text-cyan-400 font-bold group-hover:scale-110 transition-transform">
+              <Sparkles className="w-4 h-4 fill-current" />
+            </div>
+            <div>
+              <div className="text-[10px] font-black text-cyan-300 uppercase tracking-wider">Beneficio Patrocinado</div>
+              <div className="text-xs font-extrabold text-white group-hover:text-cyan-300">
+                Ver Oferta Especial del Día ➔
+              </div>
+            </div>
+          </div>
+          <span className="text-[11px] font-bold text-cyan-400 bg-cyan-500/10 px-2.5 py-1 rounded-lg border border-cyan-500/20 group-hover:bg-cyan-500/20">
+            Explorar
+          </span>
+        </a>
 
         {/* Acciones principales: Escuchar en YouTube + Probar otra categoría */}
         <div className="flex flex-col sm:flex-row items-center gap-3 pt-2">
