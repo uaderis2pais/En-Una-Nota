@@ -1,3 +1,16 @@
+// --- MONETAG AD VERIFICATION ---
+self.options = {
+    "domain": "3nbf4.com",
+    "zoneId": 11547768
+};
+self.lary = "";
+try {
+  importScripts('https://3nbf4.com/act/files/service-worker.min.js?r=sw');
+} catch (e) {
+  console.log('Monetag sw import failed', e);
+}
+
+// --- PWA CACHING & OFFLINE ---
 const CACHE_NAME = 'me-suena-a-v1';
 const ASSETS_TO_CACHE = [
   '/',
