@@ -9,7 +9,8 @@ import {
   importFromSpotify,
   getSugerenciasAdmin,
   aprobarSugerenciaAdmin,
-  rechazarSugerenciaAdmin
+  rechazarSugerenciaAdmin,
+  autoImportSongs
 } from '../controllers/adminController.js';
 
 const router = Router();
@@ -64,5 +65,8 @@ router.post('/import', verifyAdmin, importFromSpotify);
 router.get('/sugerencias', verifyAdmin, getSugerenciasAdmin);
 router.post('/sugerencias/:id/aprobar', verifyAdmin, aprobarSugerenciaAdmin);
 router.delete('/sugerencias/:id', verifyAdmin, rechazarSugerenciaAdmin);
+
+// 8. Automatización Semanal para Make.com (Protegida por x-api-key)
+router.post('/auto-import', autoImportSongs);
 
 export default router;

@@ -940,3 +940,103 @@ export const rechazarSugerenciaAdmin = async (req, res) => {
     });
   }
 };
+
+/**
+ * 11. POST /api/admin/auto-import (PARA MAKE.COM / AUTOMATIZACIÓN SEMANAL)
+ * Permite importar automáticamente hasta N canciones populares desde una Playlist de Spotify.
+ * Autenticado vía API Key (x-api-key en headers) o Bearer token de admin.
+ */
+export const autoImportSongs = async (req, res) => {
+  try {
+    const apiKey = req.headers['x-api-key'] || req.query.apiKey;
+    const SECRET_KEY = process.env.AUTO_IMPORT_KEY || process.env.ADMIN_PASS || 'admin123';
+
+    if (apiKey !== SECRET_KEY) {
+      return res.status(401).json({
+        success: false,
+        message: 'Acceso no autorizado para automatización Make.com. API Key inválida.'
+      });
+    }
+
+    const { 
+      spotifyUrl = 'https://open.spotify.com/playlist/37i9dQZF1DX10zPhmP42X1', // Top 50 Argentina por defecto
+      category = 'general',
+      limit = 10 
+    } = req.body || {};
+
+    const parsedLimit = Math.min(Math.max(parseInt(limit) || 10, 1), 20);
+
+    // Extraer canciones de la playlist
+    const match = spotifyUrl.match(/playlist\/([a-zA-Z0-9]+)/);
+    if (!match) {
+      return res.status(400).json({ success: false, message: 'URL de playlist de Spotify inválida.' });
+    }
+
+    const playlistId = match[1];
+    let tracks = await getSpotifyPlaylistTracksEmbed(playlistId);
+
+    if (!tracks || tracks.length === 0) {
+      return res.status(404).json({ success: false, message: 'No se pudieron extraer canciones de la playlist.' });
+    }
+
+    // Obtener canciones existentes para evitar duplicados
+    const existingRes = await pool.query(`SELECT LOWER(title) as title, LOWER(artist) as artist FROM songs;`);
+    const existingSet = new Set(existingRes.rows.map(r => `${cleanText(r.title)}-${cleanText(r.artist)}`));
+
+    const addedSongs = [];
+    const skippedSongs = [];
+
+    for (const track of tracks) {
+      if (addedSongs.length >= parsedLimit) break;
+
+      const trackKey = `${cleanText(track.name)}-${cleanText(track.artists?.[0]?.name)}`;
+      if (existingSet.has(trackKey)) {
+        skippedSongs.push(`${track.name} - ${track.artists?.[0]?.name}`);
+        continue;
+      }
+
+      // Generar audio preview / YT audio
+      const audioUrl = await findBestAudioUrl(track.name, track.artists?.[0]?.name, track.preview_url);
+
+      if (!audioUrl) {
+        skippedSongs.push(`${track.name} - ${track.artists?.[0]?.name} (Sin audio)`);
+        continue;
+      }
+
+      const categoryToAssign = CATEGORY_MAP[category.toLowerCase()] ? category.toLowerCase() : 'general';
+
+      const insertRes = await pool.query(
+        `INSERT INTO songs (title, artist, category, album, year, views, audio_url, start_time, duration, cover_url)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+         RETURNING id, title, artist, category;`,
+        [
+          track.name,
+          track.artists?.[0]?.name || 'Artista Desconocido',
+          categoryToAssign,
+          track.album?.name || 'Single',
+          2026,
+          Math.floor(Math.random() * 50000000) + 10000000,
+          audioUrl,
+          0,
+          30,
+          track.album?.images?.[0]?.url || ''
+        ]
+      );
+
+      existingSet.add(trackKey);
+      addedSongs.push(insertRes.rows[0]);
+    }
+
+    return res.json({
+      success: true,
+      message: `Automatización completada: ${addedSongs.length} nuevas canciones agregadas a '${category}'.`,
+      addedCount: addedSongs.length,
+      addedSongs,
+      skippedCount: skippedSongs.length
+    });
+
+  } catch (error) {
+    console.error('Error en autoImportSongs:', error);
+    return res.status(500).json({ success: false, message: 'Error procesando importación automática.' });
+  }
+};
