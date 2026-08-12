@@ -40,6 +40,7 @@ function cleanSongTitle(title) {
     .replace(/\(live[^)]*\)/gi, '')
     .split('-')[0]
     .trim();
+}
 /**
  * Normalizador estricto de claves para prevención absoluta de duplicados
  */
@@ -1036,23 +1037,29 @@ export const autoImportSongs = async (req, res) => {
     const existingRes = await pool.query(`SELECT LOWER(titulo) as title, LOWER(artista) as artist FROM canciones;`);
     const existingSet = new Set(existingRes.rows.map(r => normalizeSongKey(r.title, r.artist)));
 
-    const addedSongs = [];
     const skippedSongs = [];
 
     const categoryToAssign = (category || 'general').toLowerCase();
 
-    // Filtrar candidatos únicos que no existan en la DB
-    const candidateTracks = [];
-    for (const track of tracks) {
-      if (candidateTracks.length >= parsedLimit) break;
-      const trackKey = normalizeSongKey(track.name, track.artists?.[0]?.name);
-      if (!existingSet.has(trackKey)) {
-        existingSet.add(trackKey);
-        candidateTracks.push(track);
-      } else {
-        skippedSongs.push(`${track.name} - ${track.artists?.[0]?.name}`);
-      }
+    // Obtener todas las canciones de la playlist que AÚN NO estén en la base de datos
+    const unimportedTracks = tracks.filter(t => {
+      const trackKey = normalizeSongKey(t.name, t.artists?.[0]?.name);
+      return !existingSet.has(trackKey);
+    });
+
+    if (unimportedTracks.length === 0) {
+      return res.json({
+        success: true,
+        message: 'Todas las canciones de esta playlist ya están cargadas en la base de datos.',
+        addedCount: 0,
+        addedSongs: [],
+        skippedCount: tracks.length
+      });
     }
+
+    // Mezclar aleatoriamente las canciones no importadas para variabilidad constante en cada ejecución
+    const shuffled = [...unimportedTracks].sort(() => 0.5 - Math.random());
+    const candidateTracks = shuffled.slice(0, Math.min(parsedLimit * 2, shuffled.length));
 
     // Procesar candidatos en paralelo para respuesta ultra-rápida (< 4 segundos)
     const processResults = await Promise.all(
@@ -1107,7 +1114,7 @@ export const autoImportSongs = async (req, res) => {
       })
     );
 
-    const addedSongs = processResults.filter(Boolean);
+    const addedSongs = processResults.filter(Boolean).slice(0, parsedLimit);
 
     return res.json({
       success: true,
