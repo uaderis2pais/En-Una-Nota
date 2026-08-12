@@ -966,25 +966,27 @@ export const autoImportSongs = async (req, res) => {
 
     const parsedLimit = Math.min(Math.max(parseInt(limit) || 10, 1), 20);
 
-    // Extraer canciones de la playlist
-    const match = spotifyUrl.match(/playlist\/([a-zA-Z0-9]+)/);
+    // Extraer ID de playlist o álbum de la URL de Spotify
+    const match = spotifyUrl.match(/(playlist|album)\/([a-zA-Z0-9]+)/);
     if (!match) {
-      return res.status(400).json({ success: false, message: 'URL de playlist de Spotify inválida.' });
+      return res.status(400).json({ success: false, message: 'URL de Spotify inválida. Proporciona un enlace de Playlist o Álbum válido.' });
     }
 
-    const playlistId = match[1];
+    const playlistId = match[2];
     let tracks = await getSpotifyPlaylistTracksEmbed(playlistId);
 
     if (!tracks || tracks.length === 0) {
-      return res.status(404).json({ success: false, message: 'No se pudieron extraer canciones de la playlist.' });
+      return res.status(404).json({ success: false, message: 'No se pudieron extraer canciones de la playlist de Spotify.' });
     }
 
-    // Obtener canciones existentes para evitar duplicados
-    const existingRes = await pool.query(`SELECT LOWER(title) as title, LOWER(artist) as artist FROM songs;`);
+    // Obtener canciones existentes de la tabla 'canciones' para evitar duplicados
+    const existingRes = await pool.query(`SELECT LOWER(titulo) as title, LOWER(artista) as artist FROM canciones;`);
     const existingSet = new Set(existingRes.rows.map(r => `${cleanText(r.title)}-${cleanText(r.artist)}`));
 
     const addedSongs = [];
     const skippedSongs = [];
+
+    const categoryToAssign = (category || 'general').toLowerCase();
 
     for (const track of tracks) {
       if (addedSongs.length >= parsedLimit) break;
@@ -996,30 +998,37 @@ export const autoImportSongs = async (req, res) => {
       }
 
       // Generar audio preview / YT audio
-      const audioUrl = await findBestAudioUrl(track.name, track.artists?.[0]?.name, track.preview_url);
+      const audioUrl = await getPlayableAudioUrl(track.name, track.artists?.[0]?.name, track.preview_url);
 
       if (!audioUrl) {
         skippedSongs.push(`${track.name} - ${track.artists?.[0]?.name} (Sin audio)`);
         continue;
       }
 
-      const categoryToAssign = CATEGORY_MAP[category.toLowerCase()] ? category.toLowerCase() : 'general';
+      // Enriquecer metadatos de portada HD y año si faltan
+      let coverUrl = track.album?.images?.[0]?.url || '';
+      let year = 2026;
+      if (!coverUrl) {
+        const extra = await enrichTrackMetadata(track.name, track.artists?.[0]?.name);
+        if (extra.coverUrl) coverUrl = extra.coverUrl;
+        if (extra.year) year = parseInt(extra.year) || 2026;
+      }
+
+      const exactViews = await getExactYouTubeViews(track.name, track.artists?.[0]?.name);
 
       const insertRes = await pool.query(
-        `INSERT INTO songs (title, artist, category, album, year, views, audio_url, start_time, duration, cover_url)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-         RETURNING id, title, artist, category;`,
+        `INSERT INTO canciones (titulo, artista, genero, album, anio, reproducciones, audio_url, start_time, duration, portada_url)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, 0, 30, $8)
+         RETURNING id, titulo AS "title", artista AS "artist", genero AS "category";`,
         [
           track.name,
           track.artists?.[0]?.name || 'Artista Desconocido',
           categoryToAssign,
           track.album?.name || 'Single',
-          2026,
-          Math.floor(Math.random() * 50000000) + 10000000,
+          year,
+          exactViews || Math.floor(Math.random() * 50000000) + 10000000,
           audioUrl,
-          0,
-          30,
-          track.album?.images?.[0]?.url || ''
+          coverUrl
         ]
       );
 
@@ -1029,7 +1038,7 @@ export const autoImportSongs = async (req, res) => {
 
     return res.json({
       success: true,
-      message: `Automatización completada: ${addedSongs.length} nuevas canciones agregadas a '${category}'.`,
+      message: `Automatización completada: ${addedSongs.length} nuevas canciones agregadas a '${categoryToAssign}'.`,
       addedCount: addedSongs.length,
       addedSongs,
       skippedCount: skippedSongs.length
@@ -1037,6 +1046,6 @@ export const autoImportSongs = async (req, res) => {
 
   } catch (error) {
     console.error('Error en autoImportSongs:', error);
-    return res.status(500).json({ success: false, message: 'Error procesando importación automática.' });
+    return res.status(500).json({ success: false, message: error.message || 'Error procesando importación automática.' });
   }
 };
