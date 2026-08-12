@@ -40,6 +40,23 @@ function cleanSongTitle(title) {
     .replace(/\(live[^)]*\)/gi, '')
     .split('-')[0]
     .trim();
+/**
+ * Normalizador estricto de claves para prevención absoluta de duplicados
+ */
+function normalizeSongKey(title, artist) {
+  const normTitle = (title || '')
+    .toLowerCase()
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .replace(/bzrp music sessions/g, 'bzrp')
+    .replace(/vol\.|session|\#/gi, '')
+    .replace(/[^a-z0-9]/gi, '');
+    
+  const normArtist = (artist || '')
+    .toLowerCase()
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]/gi, '');
+
+  return `${normTitle}-${normArtist}`;
 }
 
 /**
@@ -1017,7 +1034,7 @@ export const autoImportSongs = async (req, res) => {
 
     // Obtener canciones existentes de la tabla 'canciones' para evitar duplicados
     const existingRes = await pool.query(`SELECT LOWER(titulo) as title, LOWER(artista) as artist FROM canciones;`);
-    const existingSet = new Set(existingRes.rows.map(r => `${cleanText(r.title)}-${cleanText(r.artist)}`));
+    const existingSet = new Set(existingRes.rows.map(r => normalizeSongKey(r.title, r.artist)));
 
     const addedSongs = [];
     const skippedSongs = [];
@@ -1028,7 +1045,7 @@ export const autoImportSongs = async (req, res) => {
     const candidateTracks = [];
     for (const track of tracks) {
       if (candidateTracks.length >= parsedLimit) break;
-      const trackKey = `${cleanText(track.name)}-${cleanText(track.artists?.[0]?.name)}`;
+      const trackKey = normalizeSongKey(track.name, track.artists?.[0]?.name);
       if (!existingSet.has(trackKey)) {
         existingSet.add(trackKey);
         candidateTracks.push(track);
@@ -1056,6 +1073,12 @@ export const autoImportSongs = async (req, res) => {
             const extra = await enrichTrackMetadata(title, artist);
             if (extra.coverUrl) coverUrl = extra.coverUrl;
             if (extra.year) year = parseInt(extra.year) || 2026;
+          }
+
+          // REGLA DE ORO: Si no tiene portada válida, NO SE INSERTA
+          if (!coverUrl || !coverUrl.startsWith('http')) {
+            skippedSongs.push(`${title} - ${artist} (Sin portada HD)`);
+            return null;
           }
 
           const views = Math.floor(Math.random() * 50000000) + 10000000;
