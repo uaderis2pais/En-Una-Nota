@@ -131,9 +131,39 @@ async function getSpotifyAccessToken() {
 }
 
 /**
- * Extraer canciones de CUALQUIER Playlist de Spotify sin restricciones usando Embed HTML
+ * Extraer canciones de CUALQUIER Playlist de Spotify usando Web API + Embed HTML Fallback
  */
 async function getSpotifyPlaylistTracksEmbed(playlistId) {
+  // Intento 1: Spotify Web API oficial si existen credenciales
+  try {
+    const token = await getSpotifyAccessToken();
+    if (token) {
+      const apiRes = await fetch(`https://api.spotify.com/v1/playlists/${playlistId}/tracks?limit=50`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (apiRes.ok) {
+        const apiData = await apiRes.json();
+        const items = apiData.items || [];
+        const mapped = items.map(item => {
+          const t = item.track || item;
+          if (!t || !t.name) return null;
+          return {
+            id: t.id || `${t.name}-${t.artists?.[0]?.name}`,
+            name: cleanText(t.name),
+            artists: [{ name: cleanText((t.artists || []).map(a => a.name).join(', ')) }],
+            album: { name: t.album?.name || 'Single', images: t.album?.images || [] },
+            preview_url: t.preview_url || ''
+          };
+        }).filter(Boolean);
+
+        if (mapped.length > 0) return mapped;
+      }
+    }
+  } catch (err) {
+    console.log('Spotify API playlist fetch fallback to embed:', err.message);
+  }
+
+  // Intento 2: Embed HTML
   try {
     const embedUrl = `https://open.spotify.com/embed/playlist/${playlistId}`;
     const res = await fetch(embedUrl, {
@@ -142,35 +172,35 @@ async function getSpotifyPlaylistTracksEmbed(playlistId) {
       }
     });
 
-    if (!res.ok) return [];
+    if (res.ok) {
+      const html = await res.text();
+      const match = html.match(/<script id="__NEXT_DATA__" type="application\/json">([^<]+)<\/script>/) ||
+                    html.match(/<script id="initial-state" type="text\/plain">([^<]+)<\/script>/);
 
-    const html = await res.text();
-    const match = html.match(/<script id="__NEXT_DATA__" type="application\/json">([^<]+)<\/script>/) ||
-                  html.match(/<script id="initial-state" type="text\/plain">([^<]+)<\/script>/);
+      if (match && match[1]) {
+        let rawJson = match[1];
+        if (html.includes('initial-state')) {
+          rawJson = Buffer.from(rawJson, 'base64').toString('utf-8');
+        }
+        const data = JSON.parse(rawJson);
+        const entity = data.props?.pageProps?.state?.data?.entity || data.props?.pageProps?.entity;
+        const trackList = entity?.trackList || entity?.tracks?.items || [];
 
-    if (match && match[1]) {
-      let rawJson = match[1];
-      if (html.includes('initial-state')) {
-        rawJson = Buffer.from(rawJson, 'base64').toString('utf-8');
+        return trackList.map(t => {
+          const title = cleanText(t.title || t.name || t.track?.name || '');
+          const artist = cleanText(t.subtitle || (t.artists || []).map(a => a.name).join(', ') || t.artist || '');
+          const coverUrl = t.coverUrl || t.album?.images?.[0]?.url || t.track?.album?.images?.[0]?.url || '';
+          const audioUrl = t.audioUrl || t.preview_url || t.track?.preview_url || t.audioPreview?.url || '';
+
+          return {
+            id: t.id || t.uri || `${title}-${artist}`,
+            name: title,
+            artists: [{ name: artist }],
+            album: { name: t.albumName || 'Single', images: coverUrl ? [{ url: coverUrl }] : [] },
+            preview_url: audioUrl
+          };
+        }).filter(t => t.name);
       }
-      const data = JSON.parse(rawJson);
-      const entity = data.props?.pageProps?.state?.data?.entity || data.props?.pageProps?.entity;
-      const trackList = entity?.trackList || entity?.tracks?.items || [];
-
-      return trackList.map(t => {
-        const title = cleanText(t.title || t.name || t.track?.name || '');
-        const artist = cleanText(t.subtitle || (t.artists || []).map(a => a.name).join(', ') || t.artist || '');
-        const coverUrl = t.coverUrl || t.album?.images?.[0]?.url || t.track?.album?.images?.[0]?.url || '';
-        const audioUrl = t.audioUrl || t.preview_url || t.track?.preview_url || t.audioPreview?.url || '';
-
-        return {
-          id: t.id || t.uri || `${title}-${artist}`,
-          name: title,
-          artists: [{ name: artist }],
-          album: { name: t.albumName || 'Single', images: coverUrl ? [{ url: coverUrl }] : [] },
-          preview_url: audioUrl
-        };
-      }).filter(t => t.name);
     }
   } catch (err) {
     console.error('Error extrayendo playlist embed:', err.message);
@@ -976,7 +1006,11 @@ export const autoImportSongs = async (req, res) => {
     let tracks = await getSpotifyPlaylistTracksEmbed(playlistId);
 
     if (!tracks || tracks.length === 0) {
-      return res.status(404).json({ success: false, message: 'No se pudieron extraer canciones de la playlist de Spotify.' });
+      return res.status(200).json({ 
+        success: false, 
+        addedCount: 0, 
+        message: 'No se pudieron extraer canciones de la playlist de Spotify. Asegúrate de que la Playlist sea pública o usa el enlace oficial de Spotify.' 
+      });
     }
 
     // Obtener canciones existentes de la tabla 'canciones' para evitar duplicados
