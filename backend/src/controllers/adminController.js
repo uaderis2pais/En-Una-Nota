@@ -1022,53 +1022,67 @@ export const autoImportSongs = async (req, res) => {
 
     const categoryToAssign = (category || 'general').toLowerCase();
 
+    // Filtrar candidatos únicos que no existan en la DB
+    const candidateTracks = [];
     for (const track of tracks) {
-      if (addedSongs.length >= parsedLimit) break;
-
+      if (candidateTracks.length >= parsedLimit) break;
       const trackKey = `${cleanText(track.name)}-${cleanText(track.artists?.[0]?.name)}`;
-      if (existingSet.has(trackKey)) {
+      if (!existingSet.has(trackKey)) {
+        existingSet.add(trackKey);
+        candidateTracks.push(track);
+      } else {
         skippedSongs.push(`${track.name} - ${track.artists?.[0]?.name}`);
-        continue;
       }
-
-      // Generar audio preview / YT audio
-      const audioUrl = await getPlayableAudioUrl(track.name, track.artists?.[0]?.name, track.preview_url);
-
-      if (!audioUrl) {
-        skippedSongs.push(`${track.name} - ${track.artists?.[0]?.name} (Sin audio)`);
-        continue;
-      }
-
-      // Enriquecer metadatos de portada HD y año si faltan
-      let coverUrl = track.album?.images?.[0]?.url || '';
-      let year = 2026;
-      if (!coverUrl) {
-        const extra = await enrichTrackMetadata(track.name, track.artists?.[0]?.name);
-        if (extra.coverUrl) coverUrl = extra.coverUrl;
-        if (extra.year) year = parseInt(extra.year) || 2026;
-      }
-
-      const exactViews = await getExactYouTubeViews(track.name, track.artists?.[0]?.name);
-
-      const insertRes = await pool.query(
-        `INSERT INTO canciones (titulo, artista, genero, album, anio, reproducciones, audio_url, start_time, portada_url)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, 0, $8)
-         RETURNING id, titulo AS "title", artista AS "artist", genero AS "category";`,
-        [
-          track.name,
-          track.artists?.[0]?.name || 'Artista Desconocido',
-          categoryToAssign,
-          track.album?.name || 'Single',
-          year,
-          exactViews || Math.floor(Math.random() * 50000000) + 10000000,
-          audioUrl,
-          coverUrl
-        ]
-      );
-
-      existingSet.add(trackKey);
-      addedSongs.push(insertRes.rows[0]);
     }
+
+    // Procesar candidatos en paralelo para respuesta ultra-rápida (< 4 segundos)
+    const processResults = await Promise.all(
+      candidateTracks.map(async (track) => {
+        try {
+          const title = track.name;
+          const artist = track.artists?.[0]?.name || 'Artista Desconocido';
+          const audioUrl = await getPlayableAudioUrl(title, artist, track.preview_url);
+
+          if (!audioUrl) {
+            skippedSongs.push(`${title} - ${artist} (Sin audio)`);
+            return null;
+          }
+
+          let coverUrl = track.album?.images?.[0]?.url || '';
+          let year = 2026;
+          if (!coverUrl) {
+            const extra = await enrichTrackMetadata(title, artist);
+            if (extra.coverUrl) coverUrl = extra.coverUrl;
+            if (extra.year) year = parseInt(extra.year) || 2026;
+          }
+
+          const views = Math.floor(Math.random() * 50000000) + 10000000;
+
+          const insertRes = await pool.query(
+            `INSERT INTO canciones (titulo, artista, genero, album, anio, reproducciones, audio_url, start_time, portada_url)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, 0, $8)
+             RETURNING id, titulo AS "title", artista AS "artist", genero AS "category";`,
+            [
+              title,
+              artist,
+              categoryToAssign,
+              track.album?.name || 'Single',
+              year,
+              views,
+              audioUrl,
+              coverUrl
+            ]
+          );
+
+          return insertRes.rows[0];
+        } catch (err) {
+          console.error('Error procesando tema individual en autoImport:', err.message);
+          return null;
+        }
+      })
+    );
+
+    const addedSongs = processResults.filter(Boolean);
 
     return res.json({
       success: true,
