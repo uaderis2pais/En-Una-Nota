@@ -108,26 +108,26 @@ async function getSpotifyAccessToken() {
   const clientId = process.env.SPOTIFY_CLIENT_ID;
   const clientSecret = process.env.SPOTIFY_CLIENT_SECRET;
 
-  if (!clientId || !clientSecret) {
-    throw new Error("⚠️ Faltan SPOTIFY_CLIENT_ID y SPOTIFY_CLIENT_SECRET en las variables de entorno.");
+  if (!clientId || !clientSecret) return null;
+
+  try {
+    const authHeader = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
+    const res = await fetch('https://accounts.spotify.com/api/token', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Basic ${authHeader}`,
+        'Content-Type': 'application/x-www-form-urlencoded'
+      },
+      body: 'grant_type=client_credentials',
+      signal: AbortSignal.timeout(3000)
+    });
+
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data.access_token || null;
+  } catch (err) {
+    return null;
   }
-
-  const authHeader = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
-  const res = await fetch('https://accounts.spotify.com/api/token', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Basic ${authHeader}`,
-      'Content-Type': 'application/x-www-form-urlencoded'
-    },
-    body: 'grant_type=client_credentials'
-  });
-
-  const data = await res.json();
-  if (!res.ok) {
-    throw new Error(`Spotify Auth Error: ${data.error_description || res.statusText}`);
-  }
-
-  return data.access_token;
 }
 
 /**
@@ -139,7 +139,8 @@ async function getSpotifyPlaylistTracksEmbed(playlistId) {
     const token = await getSpotifyAccessToken();
     if (token) {
       const apiRes = await fetch(`https://api.spotify.com/v1/playlists/${playlistId}/tracks?limit=50`, {
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: { 'Authorization': `Bearer ${token}` },
+        signal: AbortSignal.timeout(3000)
       });
       if (apiRes.ok) {
         const apiData = await apiRes.json();
@@ -169,7 +170,8 @@ async function getSpotifyPlaylistTracksEmbed(playlistId) {
     const res = await fetch(embedUrl, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-      }
+      },
+      signal: AbortSignal.timeout(3500)
     });
 
     if (res.ok) {
