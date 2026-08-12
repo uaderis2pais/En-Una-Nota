@@ -1051,8 +1051,8 @@ export const autoImportSongs = async (req, res) => {
       const exactViews = await getExactYouTubeViews(track.name, track.artists?.[0]?.name);
 
       const insertRes = await pool.query(
-        `INSERT INTO canciones (titulo, artista, genero, album, anio, reproducciones, audio_url, start_time, duration, portada_url)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, 0, 30, $8)
+        `INSERT INTO canciones (titulo, artista, genero, album, anio, reproducciones, audio_url, start_time, portada_url)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, 0, $8)
          RETURNING id, titulo AS "title", artista AS "artist", genero AS "category";`,
         [
           track.name,
